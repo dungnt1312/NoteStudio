@@ -33,7 +33,7 @@ final class AssistantEngine: ObservableObject {
         }
         var apiText = text
         if !mentioned.isEmpty {
-            let blocks = mentioned.map { "[Ghi chú @\($0.displayTitle)]\n\($0.content)" }
+            let blocks = mentioned.map { Lf("[Note @%@]", $0.displayTitle) + "\n\($0.content)" }
                 .joined(separator: "\n\n")
             apiText += "\n\n" + blocks
         }
@@ -166,7 +166,7 @@ final class AssistantEngine: ObservableObject {
                     continue
                 }
 
-                let finalText = response.content.isEmpty ? "(AI không trả về nội dung)" : response.content
+                let finalText = response.content.isEmpty ? L("(AI returned no content)") : response.content
                 if store.activeMessages.last?.id == streamId {
                     store.upsertStreamingMessage(id: streamId, text: finalText)
                 } else {
@@ -187,7 +187,7 @@ final class AssistantEngine: ObservableObject {
         }
         let lowered = message.lowercased()
         if hasImage, ["image", "vision", "multimodal", "content must be a string", "image_url"].contains(where: lowered.contains) {
-            return "Model \(LLMService.activeProvider.model) không đọc được ảnh. Hãy chọn model có vision (vd. gpt-4o, gpt-4o-mini, llava) ở menu model phía trên. — \(message)"
+            return Lf("Model %1$@ can't read images. Pick a vision-capable model (e.g. gpt-4o, gpt-4o-mini, llava) in the model menu above. — %2$@", LLMService.activeProvider.model, message)
         }
         return message
     }

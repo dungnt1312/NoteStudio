@@ -65,13 +65,13 @@ struct ChatPanelView: View {
                     .padding(.leading, 14)
                 modelMenu
                 WindowDragArea()
-                IconButton(systemName: "square.and.pencil", help: "Hội thoại mới") {
+                IconButton(systemName: "square.and.pencil", help: L("New chat")) {
                     store.newChatSession()
                 }
-                IconButton(systemName: "arrow.up.left.and.arrow.down.right", help: "Mở toàn màn hình (⌘2)") {
+                IconButton(systemName: "arrow.up.left.and.arrow.down.right", help: L("Open full screen (⌘2)")) {
                     withAnimation(.easeInOut(duration: 0.18)) { store.activeSection = .chat }
                 }
-                IconButton(systemName: "xmark", help: "Đóng trợ lý (⌘⇧J)") {
+                IconButton(systemName: "xmark", help: L("Close Assistant (⌘⇧J)")) {
                     withAnimation(.easeInOut(duration: 0.22)) { store.showAssistant = false }
                 }
             } else {
@@ -80,13 +80,13 @@ struct ChatPanelView: View {
                     .padding(.leading, store.sidebarVisible ? 10 : 0)
                 WindowDragArea()
                 if let session = store.activeSession, !session.messages.isEmpty {
-                    IconMenu(help: "Tùy chọn hội thoại") {
-                        Button("Đổi tên…") {
+                    IconMenu(help: L("Chat options")) {
+                        Button(L("Rename…")) {
                             renameDraft = session.title
                             renaming = session
                         }
                         Divider()
-                        Button("Xóa hội thoại…", role: .destructive) { deleting = session }
+                        Button(L("Delete chat…"), role: .destructive) { deleting = session }
                     }
                 }
             }
@@ -106,7 +106,7 @@ struct ChatPanelView: View {
     private var emptyState: some View {
         VStack(spacing: isSide ? 18 : 28) {
             Spacer()
-            Text(isSide ? greetingForSide : "Hôm nay mình giúp gì cho bạn?")
+            Text(isSide ? greetingForSide : L("What can I help you with today?"))
                 .font(isSide ? Studio.Typo.headline() : Studio.Typo.largeTitle(.semibold))
                 .foregroundStyle(Studio.textPrimary)
                 .multilineTextAlignment(.center)
@@ -130,20 +130,20 @@ struct ChatPanelView: View {
 
     private var greetingForSide: String {
         if let note = store.selectedNote {
-            return "Hỏi gì về “\(note.displayTitle)”?"
+            return Lf("Ask about “%@”?", note.displayTitle)
         }
-        return "Hỏi trợ lý bất cứ điều gì"
+        return L("Ask the assistant anything")
     }
 
     private var suggestions: some View {
         let items: [(String, String, String)] = isSide
-            ? [("list.bullet", "Tóm tắt", "Tóm tắt ghi chú đang mở thành các ý chính"),
-               ("checklist", "Việc cần làm", "Rút ra danh sách việc cần làm từ ghi chú đang mở"),
-               ("wand.and.stars", "Viết lại", "Viết lại ghi chú đang mở cho gọn và rõ ràng hơn")]
-            : [("magnifyingglass", "Tìm & tóm tắt", "Research các ghi chú về Q4 rồi tóm tắt"),
-               ("lightbulb", "Brainstorm", "Brainstorm 5 ý tưởng nội dung, đối chiếu với ý tưởng cũ"),
-               ("checklist", "Lên kế hoạch", "Tạo ghi chú việc cần làm tuần này"),
-               ("chart.bar", "Thống kê", "Thống kê kho ghi chú của mình theo thẻ")]
+            ? [("list.bullet", L("Summarize"), L("Summarize the open note into key points")),
+               ("checklist", L("To-dos"), L("Extract a to-do list from the open note")),
+               ("wand.and.stars", L("Rewrite"), L("Rewrite the open note to be shorter and clearer"))]
+            : [("magnifyingglass", L("Search & summarize"), L("Research my notes about Q4 and summarize")),
+               ("lightbulb", L("Brainstorm"), L("Brainstorm 5 content ideas, building on my earlier ideas")),
+               ("checklist", L("Plan"), L("Create a to-do note for this week")),
+               ("chart.bar", L("Stats"), L("Give me stats about my notes by tag"))]
         return FlowRow(spacing: 8) {
             ForEach(items, id: \.2) { icon, label, prompt in
                 SuggestionChip(icon: icon, label: label) {
@@ -253,7 +253,7 @@ struct ChatPanelView: View {
                 errorBanner(error)
             }
             composerCard
-            Text("AI có thể mắc lỗi. Hãy kiểm tra các thông tin quan trọng.")
+            Text(L("AI can make mistakes. Check important info."))
                 .font(Studio.Typo.caption())
                 .foregroundStyle(Studio.textTertiary)
         }
@@ -275,7 +275,7 @@ struct ChatPanelView: View {
                 .textSelection(.enabled)
                 .lineLimit(4)
             Spacer(minLength: 0)
-            Button("Cài đặt") { store.activeSection = .settings }
+            Button(L("Settings")) { store.activeSection = .settings }
                 .buttonStyle(.plain)
                 .font(Studio.Typo.footnote(.semibold))
                 .foregroundStyle(Studio.textPrimary)
@@ -389,8 +389,8 @@ struct ChatPanelView: View {
                     onCancel: { completionTrigger = nil },
                     onSubmit: { submitDraft() },
                     placeholder: attachments.isEmpty
-                        ? (isSide ? "Hỏi về ghi chú này…" : "Hỏi bất kỳ điều gì")
-                        : "Hỏi về tệp đính kèm… (để trống = phân tích)",
+                        ? (isSide ? L("Ask about this note…") : L("Ask anything"))
+                        : L("Ask about the attachments… (leave empty to analyze)"),
                     onHeightChange: { composerHeight = $0 },
                     onPasteAttachments: { pasteboard in handlePaste(pasteboard) },
                     onDropFiles: { urls in importFiles(urls) }
@@ -401,7 +401,7 @@ struct ChatPanelView: View {
 
             HStack(spacing: 4) {
                 plusButton
-                ComposerToolButton(systemName: "at", help: "Nhắc đến ghi chú (@)") {
+                ComposerToolButton(systemName: "at", help: L("Mention a note (@)")) {
                     composer.insertTrigger("@")
                 }
                 if isSide, let note = store.selectedNote, !mentionedNotes.contains(where: { $0.id == note.id }) {
@@ -451,21 +451,21 @@ struct ChatPanelView: View {
     }
 
     private var plusButton: some View {
-        ComposerToolButton(systemName: "plus", help: "Đính kèm tệp, nhắc đến ghi chú, lệnh nhanh…") {
+        ComposerToolButton(systemName: "plus", help: L("Attach files, mention notes, quick commands…")) {
             showPlusMenu.toggle()
         }
         .popover(isPresented: $showPlusMenu, arrowEdge: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                PlusMenuRow(icon: "paperclip", title: "Đính kèm ảnh hoặc tệp…", subtitle: "Ảnh, PDF, Word, văn bản · hoặc kéo thả / ⌘V") {
+                PlusMenuRow(icon: "paperclip", title: L("Attach images or files…"), subtitle: L("Images, PDF, Word, text · or drag & drop / ⌘V")) {
                     showPlusMenu = false
                     pickFiles()
                 }
-                PlusMenuRow(icon: "doc.text", title: "Nhắc đến ghi chú", subtitle: "Đưa nội dung note vào ngữ cảnh") {
+                PlusMenuRow(icon: "doc.text", title: L("Mention a note"), subtitle: L("Bring the note's content into context")) {
                     showPlusMenu = false
                     composer.insertTrigger("@")
                 }
                 Rectangle().fill(Studio.hairline).frame(height: 1).padding(.vertical, 4).padding(.horizontal, 8)
-                Text("Lệnh nhanh")
+                Text(L("Quick commands"))
                     .font(Studio.Typo.caption(.medium))
                     .foregroundStyle(Studio.textSecondary)
                     .padding(.horizontal, 10)
@@ -509,7 +509,7 @@ struct ChatPanelView: View {
         }
         .buttonStyle(.plain)
         .disabled(!assistant.isLoading && !canSend)
-        .help(assistant.isLoading ? "Dừng phản hồi" : "Gửi (Enter) · Shift+Enter để xuống dòng")
+        .help(assistant.isLoading ? L("Stop generating") : L("Send (Enter) · Shift+Enter for a new line"))
         .animation(.easeOut(duration: 0.12), value: canSend)
         .animation(.easeOut(duration: 0.12), value: assistant.isLoading)
     }
@@ -590,8 +590,8 @@ struct ChatPanelView: View {
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
-        panel.prompt = "Đính kèm"
-        panel.message = "Chọn ảnh hoặc tài liệu để hỏi trợ lý"
+        panel.prompt = L("Attach")
+        panel.message = L("Choose images or documents to ask the assistant")
         panel.begin { response in
             guard response == .OK else { return }
             importFiles(panel.urls)
@@ -635,12 +635,12 @@ struct ChatPanelView: View {
     private func importFiles(_ urls: [URL]) {
         let room = AttachmentStore.maxPerMessage - attachments.count - importingCount
         guard room > 0 else {
-            store.showToast(StudioToast(message: "Tối đa \(AttachmentStore.maxPerMessage) tệp mỗi tin nhắn"))
+            store.showToast(StudioToast(message: Lf("Up to %d files per message", AttachmentStore.maxPerMessage)))
             return
         }
         let accepted = Array(urls.prefix(room))
         if urls.count > room {
-            store.showToast(StudioToast(message: "Chỉ đính kèm thêm được \(room) tệp"))
+            store.showToast(StudioToast(message: Lf("Only %d more file(s) can be attached", room)))
         }
         importingCount += accepted.count
         for url in accepted {
@@ -654,7 +654,7 @@ struct ChatPanelView: View {
 
     private func importImageData(_ data: Data, name: String) {
         guard attachments.count + importingCount < AttachmentStore.maxPerMessage else {
-            store.showToast(StudioToast(message: "Tối đa \(AttachmentStore.maxPerMessage) tệp mỗi tin nhắn"))
+            store.showToast(StudioToast(message: Lf("Up to %d files per message", AttachmentStore.maxPerMessage)))
             return
         }
         importingCount += 1
@@ -692,18 +692,26 @@ struct SlashCommand: Identifiable {
     let desc: String
     let template: String
 
-    static let all: [SlashCommand] = [
-        .init(name: "tóm-tắt", icon: "list.bullet",
-              desc: "Tóm tắt ghi chú đang chọn", template: "Tóm tắt ghi chú đang chọn thành các ý chính ngắn gọn."),
-        .init(name: "dịch", icon: "globe",
-              desc: "Dịch văn bản sang tiếng Anh", template: "Dịch đoạn văn sau sang tiếng Anh:\n\n"),
-        .init(name: "viết-tiếp", icon: "text.append",
-              desc: "Viết tiếp văn bản", template: "Viết tiếp nội dung sau một cách tự nhiên:\n\n"),
-        .init(name: "checklist", icon: "checklist",
-              desc: "Chuyển thành checklist markdown", template: "Chuyển nội dung sau thành checklist markdown (dạng - [ ]):\n\n"),
-        .init(name: "brainstorm", icon: "lightbulb",
-              desc: "Brainstorm ý tưởng", template: "Brainstorm 5 ý tưởng về: "),
-    ]
+    // computed var: tra lại bản dịch mỗi lần mở menu (đổi ngôn ngữ là đổi ngay)
+    static var all: [SlashCommand] {
+        [
+            .init(name: L("summarize"), icon: "list.bullet",
+                  desc: L("Summarize the selected note"),
+                  template: L("Summarize the selected note into concise key points.")),
+            .init(name: L("translate"), icon: "globe",
+                  desc: L("Translate text into English"),
+                  template: L("Translate the following text into English:\n\n")),
+            .init(name: L("continue"), icon: "text.append",
+                  desc: L("Continue writing"),
+                  template: L("Continue the following text naturally:\n\n")),
+            .init(name: L("checklist"), icon: "checklist",
+                  desc: L("Convert to a markdown checklist"),
+                  template: L("Convert the following content into a markdown checklist (- [ ] items):\n\n")),
+            .init(name: L("brainstorm"), icon: "lightbulb",
+                  desc: L("Brainstorm ideas"),
+                  template: L("Brainstorm 5 ideas about: ")),
+        ]
+    }
 }
 
 // MARK: - Tin nhắn user: bubble xám nhạt bên phải, Sửa / Làm lại hiện khi hover
@@ -732,13 +740,13 @@ private struct UserMessageRow: View {
                 .frame(maxWidth: compact ? 300 : 520, alignment: .trailing)
 
             HStack(spacing: 2) {
-                HoverActionButton(systemName: "doc.on.doc", help: "Sao chép") {
+                HoverActionButton(systemName: "doc.on.doc", help: L("Copy")) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(message.text, forType: .string)
                 }
-                HoverActionButton(systemName: "pencil", help: "Sửa tin nhắn", action: onEdit)
+                HoverActionButton(systemName: "pencil", help: L("Edit message"), action: onEdit)
                     .disabled(assistant.isLoading)
-                HoverActionButton(systemName: "arrow.clockwise", help: "Gửi lại", action: onRetry)
+                HoverActionButton(systemName: "arrow.clockwise", help: L("Retry"), action: onRetry)
                     .disabled(assistant.isLoading)
             }
             .opacity(hovering ? 1 : 0)
@@ -806,22 +814,22 @@ private struct AssistantMessageRow: View {
             .textSelection(.enabled)
 
             HStack(spacing: 2) {
-                HoverActionButton(systemName: copied ? "checkmark" : "doc.on.doc", help: "Sao chép") {
+                HoverActionButton(systemName: copied ? "checkmark" : "doc.on.doc", help: L("Copy")) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(message.text, forType: .string)
                     copied = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
                 }
                 if let note = store.selectedNote {
-                    HoverActionButton(systemName: "text.append", help: "Chèn vào cuối “\(note.displayTitle)”") {
+                    HoverActionButton(systemName: "text.append", help: Lf("Append to “%@”", note.displayTitle)) {
                         store.appendContent("\n\n\(message.text)\n", to: note.id)
-                        store.showToast(StudioToast(message: "Đã chèn vào “\(note.displayTitle)”"))
+                        store.showToast(StudioToast(message: Lf("Appended to “%@”", note.displayTitle)))
                     }
                 }
-                HoverActionButton(systemName: "square.and.pencil", help: "Lưu câu trả lời thành ghi chú mới") {
+                HoverActionButton(systemName: "square.and.pencil", help: L("Save reply as a new note")) {
                     saveAsNote()
                 }
-                HoverActionButton(systemName: "arrow.clockwise", help: "Tạo lại câu trả lời") {
+                HoverActionButton(systemName: "arrow.clockwise", help: L("Regenerate reply")) {
                     if let userMessage = store.activeMessages.last(where: { $0.role == .user }) {
                         assistant.regenerate(from: userMessage.id)
                     }
@@ -851,17 +859,17 @@ extension AssistantMessageRow {
             }
         }
         if title.isEmpty, let files = question?.attachments, !files.isEmpty {
-            title = files.count == 1 ? "Phân tích \((files[0].name as NSString).deletingPathExtension)" : "Phân tích \(files.count) tệp"
+            title = files.count == 1 ? Lf("Analysis of %@", (files[0].name as NSString).deletingPathExtension) : Lf("Analysis of %d files", files.count)
         }
         if title.isEmpty, let question {
             title = String(question.text.prefix(60))
         }
         var content = message.text
         if let files = question?.attachments, !files.isEmpty {
-            content += "\n\n---\nNguồn: " + files.map(\.name).joined(separator: ", ")
+            content += "\n\n---\n" + L("Sources: ") + files.map(\.name).joined(separator: ", ")
         }
         let note = store.createAINote(title: title, content: content, pinned: false, tags: nil)
-        store.showToast(StudioToast(message: "Đã lưu “\(note.displayTitle)”", actionLabel: "Mở") { [weak store] in
+        store.showToast(StudioToast(message: Lf("Saved “%@”", note.displayTitle), actionLabel: L("Open")) { [weak store] in
             store?.activeSection = .notes
             store?.select(note.id)
         })
@@ -896,7 +904,7 @@ private struct ToolActivityRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Xem các bước AI đã làm")
+            .help(L("See what the AI did"))
 
             if expanded {
                 VStack(alignment: .leading, spacing: 2) {
@@ -917,9 +925,9 @@ private struct ToolActivityRow: View {
         if messages.count == 1 { return label(for: last) }
         let deletes = messages.filter { $0.toolName == "delete_note" }
         if deletes.count > 1 {
-            return "Đã dùng \(messages.count) công cụ · đề nghị xóa \(deletes.count) ghi chú"
+            return Lf("Used %d tools · suggested deleting %d notes", messages.count, deletes.count)
         }
-        return "Đã dùng \(messages.count) công cụ · \(label(for: last))"
+        return Lf("Used %d tools · %@", messages.count, label(for: last))
     }
 
     private func stepRow(_ message: ChatMessage) -> some View {
@@ -936,7 +944,7 @@ private struct ToolActivityRow: View {
                         .font(Studio.Typo.footnote())
                         .foregroundStyle(Studio.textSecondary)
                         .lineLimit(1)
-                    Text("chi tiết")
+                    Text(L("detail"))
                         .font(Studio.Typo.caption())
                         .foregroundStyle(Studio.textTertiary)
                         .underline()
@@ -972,11 +980,11 @@ private struct ToolActivityRow: View {
 
     private func label(for message: ChatMessage) -> String {
         guard message.toolName == "delete_note" else { return message.text }
-        let title = AssistantEngine.deleteTitle(of: message) ?? "ghi chú"
+        let title = AssistantEngine.deleteTitle(of: message) ?? L("note")
         switch assistant.deleteResolution(for: message) {
-        case .some(true): return "Đã xóa “\(title)”"
-        case .some(false): return "Đã giữ lại “\(title)”"
-        case .none: return "Đề nghị xóa “\(title)”"
+        case .some(true): return Lf("Deleted “%@”", title)
+        case .some(false): return Lf("Kept “%@”", title)
+        case .none: return Lf("Suggested deleting “%@”", title)
         }
     }
 
@@ -1010,7 +1018,7 @@ private struct DeleteConfirmationCard: View {
     }
 
     private var undoHint: some View {
-        Text("Có thể hoàn tác bằng ⌘Z")
+        Text(L("Undo with ⌘Z"))
             .font(Studio.Typo.footnote())
             .foregroundStyle(Studio.textTertiary)
             .fixedSize()
@@ -1018,7 +1026,7 @@ private struct DeleteConfirmationCard: View {
 
     private var actionButtons: some View {
         HStack(spacing: 8) {
-            Button("Giữ lại tất cả") {
+            Button(L("Keep all")) {
                 assistant.rejectDeletes(items)
             }
             .buttonStyle(SecondaryButtonStyle())
@@ -1027,7 +1035,7 @@ private struct DeleteConfirmationCard: View {
                 assistant.confirmDeletes(selected)
                 assistant.rejectDeletes(items.filter { excluded.contains($0.id) })
             } label: {
-                Text(selected.count == 1 ? "Xóa 1 ghi chú" : "Xóa \(selected.count) ghi chú")
+                Text(selected.count == 1 ? L("Delete 1 note") : Lf("Delete %d notes", selected.count))
                     .font(Studio.Typo.callout(.semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)
@@ -1048,7 +1056,7 @@ private struct DeleteConfirmationCard: View {
                 Image(systemName: "trash")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Studio.danger)
-                Text(items.count == 1 ? "AI muốn xóa 1 ghi chú" : "AI muốn xóa \(items.count) ghi chú")
+                Text(items.count == 1 ? L("AI wants to delete 1 note") : Lf("AI wants to delete %d notes", items.count))
                     .font(Studio.Typo.callout(.semibold))
                     .foregroundStyle(Studio.textPrimary)
             }
@@ -1108,7 +1116,7 @@ private struct ThinkingIndicator: View {
                 .fill(Studio.textPrimary)
                 .frame(width: 10, height: 10)
                 .scaleEffect(0.75 + 0.25 * sin(phase))
-            Text("Đang suy nghĩ…")
+            Text(L("Thinking…"))
                 .font(Studio.Typo.callout())
                 .foregroundStyle(Studio.textSecondary)
         }
@@ -1192,7 +1200,7 @@ private struct AttachCurrentNoteChip: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .help("Đính kèm nội dung ghi chú đang mở")
+        .help(L("Attach the content of the open note"))
     }
 }
 
@@ -1212,7 +1220,7 @@ private struct MentionAttachment: View {
                     .font(Studio.Typo.footnote(.semibold))
                     .foregroundStyle(Studio.textPrimary)
                     .lineLimit(1)
-                Text("Ghi chú")
+                Text(L("Note"))
                     .font(Studio.Typo.caption())
                     .foregroundStyle(Studio.textSecondary)
             }
@@ -1224,7 +1232,7 @@ private struct MentionAttachment: View {
                     .background(Circle().fill(Studio.hover))
             }
             .buttonStyle(.plain)
-            .help("Bỏ ghi chú này")
+            .help(L("Remove this note"))
         }
         .padding(.leading, 6)
         .padding(.trailing, 8)
@@ -1375,7 +1383,7 @@ struct ProviderPicker: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .help("Đổi AI provider / model")
+        .help(L("Switch AI provider / model"))
         .popover(isPresented: $open, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Provider")
@@ -1395,7 +1403,7 @@ struct ProviderPicker: View {
                     }
                 }
                 Rectangle().fill(Studio.hairline).frame(height: 1).padding(.vertical, 4).padding(.horizontal, 8)
-                PickerRow(title: "Quản lý provider…", subtitle: nil, checked: false, icon: "gearshape") {
+                PickerRow(title: L("Manage providers…"), subtitle: nil, checked: false, icon: "gearshape") {
                     open = false
                     store.activeSection = .settings
                 }
@@ -1482,7 +1490,7 @@ private struct ComposerAttachmentTile: View {
             .buttonStyle(.plain)
             .offset(x: 5, y: -5)
             .opacity(hovering ? 1 : 0.85)
-            .help("Bỏ tệp này")
+            .help(L("Remove this file"))
         }
         .padding(.top, 5)
         .padding(.trailing, 5)
@@ -1495,7 +1503,7 @@ private struct ImportingTile: View {
     var body: some View {
         HStack(spacing: 8) {
             ProgressView().controlSize(.small)
-            Text("Đang đọc tệp…")
+            Text(L("Reading file…"))
                 .font(Studio.Typo.footnote())
                 .foregroundStyle(Studio.textSecondary)
         }
@@ -1614,7 +1622,7 @@ private struct MessageAttachmentsView: View {
             }
             ForEach(documents) { document in
                 DocumentCard(attachment: document, maxWidth: compact ? 260 : 300)
-                    .help("Nhấp đúp để mở \(document.name)")
+                    .help(Lf("Double-click to open %@", document.name))
             }
         }
     }
@@ -1626,7 +1634,7 @@ private struct MessageAttachmentsView: View {
             .contentShape(Rectangle())
             .environment(\.layoutDirection, .leftToRight)
             .onTapGesture(count: 2) { NSWorkspace.shared.open(image.fileURL) }
-            .help("Nhấp đúp để xem ảnh đầy đủ")
+            .help(L("Double-click to view the full image"))
     }
 }
 
@@ -1654,10 +1662,10 @@ private struct DropOverlay: View {
                         .offset(y: -6)
                 }
                 .frame(height: 48)
-                Text("Thả tệp vào đây")
+                Text(L("Drop files here"))
                     .font(compact ? Studio.Typo.headline() : Studio.Typo.title())
                     .foregroundStyle(Studio.textPrimary)
-                Text("Ảnh, PDF, Word, văn bản — trợ lý sẽ phân tích giúp bạn")
+                Text(L("Images, PDF, Word, text — the assistant will analyze them for you"))
                     .font(Studio.Typo.callout())
                     .foregroundStyle(Studio.textSecondary)
                     .multilineTextAlignment(.center)

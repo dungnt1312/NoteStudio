@@ -22,23 +22,23 @@ struct ChatAttachment: Identifiable, Codable, Equatable, Hashable {
     var fileExtension: String { (name as NSString).pathExtension.lowercased() }
 
     var typeLabel: String {
-        if kind == .image { return "Ảnh" }
+        if kind == .image { return L("Image") }
         switch fileExtension {
         case "pdf": return "PDF"
         case "doc", "docx": return "Word"
         case "rtf", "rtfd": return "RTF"
         case "odt": return "ODT"
         case "md", "markdown": return "Markdown"
-        case "csv", "tsv": return "Bảng"
+        case "csv", "tsv": return L("Sheet")
         case "json": return "JSON"
-        case "txt", "log", "": return "Văn bản"
+        case "txt", "log", "": return L("Text")
         default:
-            return AttachmentStore.codeExtensions.contains(fileExtension) ? "Mã nguồn" : fileExtension.uppercased()
+            return AttachmentStore.codeExtensions.contains(fileExtension) ? L("Source code") : fileExtension.uppercased()
         }
     }
 
     var detailLabel: String {
-        if let pageCount, pageCount > 0 { return "\(typeLabel) · \(pageCount) trang" }
+        if let pageCount, pageCount > 0 { return Lf("%@ · %d pages", typeLabel, pageCount) }
         return "\(typeLabel) · \(ByteCountFormatter.string(fromByteCount: Int64(byteSize), countStyle: .file))"
     }
 }
@@ -51,11 +51,11 @@ enum AttachmentError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .tooLarge(let name):
-            return "“\(name)” lớn hơn \(AttachmentStore.maxFileBytes / 1_048_576) MB"
+            return Lf("“%@” is larger than %d MB", name, AttachmentStore.maxFileBytes / 1_048_576)
         case .unsupported(let name):
-            return "Chưa đọc được “\(name)” — hỗ trợ ảnh, PDF, Word, RTF, văn bản, CSV và mã nguồn"
+            return Lf("Couldn't read “%@” — supported: images, PDF, Word, RTF, text, CSV and source code", name)
         case .unreadable(let name):
-            return "Không đọc được nội dung “\(name)”"
+            return Lf("Couldn't read the content of “%@”", name)
         }
     }
 }
@@ -65,7 +65,7 @@ enum AttachmentStore {
     static let maxTextCharacters = 60_000
     static let maxImagePixels = 2048
     static let maxPerMessage = 10
-    static let defaultPrompt = "Hãy phân tích (các) tệp đính kèm."
+    static var defaultPrompt: String { L("Please analyze the attached file(s).") }
 
     static let directory: URL = {
         let dir = StudioPaths.dataDirectory.appendingPathComponent("attachments", isDirectory: true)
@@ -122,7 +122,7 @@ enum AttachmentStore {
         guard !trimmed.isEmpty else {
             // PDF chỉ có ảnh scan không có lớp chữ
             throw ext == "pdf"
-                ? AttachmentError.unreadable(name + " (PDF dạng ảnh scan — hãy chụp màn hình trang cần hỏi)")
+                ? AttachmentError.unreadable(name + L(" (scanned-image PDF — screenshot the page you want to ask about)"))
                 : AttachmentError.unreadable(name)
         }
 
@@ -219,8 +219,8 @@ enum AttachmentStore {
     static func userContent(text: String, attachments: [ChatAttachment]) -> Any {
         var full = text
         for doc in attachments where doc.kind == .document {
-            let note = doc.truncated == true ? ", đã cắt bớt vì quá dài" : ""
-            full += "\n\n[Tệp đính kèm: \(doc.name) — \(doc.detailLabel)\(note)]\n\(doc.extractedText ?? "")\n[Hết tệp \(doc.name)]"
+            let note = doc.truncated == true ? ", " + L("truncated because too long") : ""
+            full += "\n\n" + Lf("[Attachment: %1$@ — %2$@%3$@]", doc.name, doc.detailLabel, note) + "\n\(doc.extractedText ?? "")\n" + Lf("[End of file %@]", doc.name)
         }
         let images = attachments.filter { $0.kind == .image }
         guard !images.isEmpty else { return full }
@@ -238,7 +238,7 @@ enum AttachmentStore {
             expanded["content"] = parts.map { part -> [String: Any] in
                 guard part["type"] as? String == "image_ref", let file = part["file"] as? String else { return part }
                 guard let url = dataURL(fileName: file) else {
-                    return ["type": "text", "text": "[Ảnh \(part["name"] as? String ?? "") không còn trên máy]"]
+                    return ["type": "text", "text": Lf("[Image %@ is no longer on disk]", part["name"] as? String ?? "")]
                 }
                 return ["type": "image_url", "image_url": ["url": url]]
             }
@@ -287,6 +287,6 @@ enum AttachmentStore {
     static func pastedImageName() -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH.mm.ss"
-        return "Ảnh dán \(formatter.string(from: Date())).png"
+        return Lf("Pasted image %@", formatter.string(from: Date())) + ".png"
     }
 }

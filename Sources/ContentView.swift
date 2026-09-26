@@ -107,7 +107,7 @@ private struct ToastView: View {
                     .foregroundStyle(Studio.accentForeground.opacity(0.6))
             }
             .buttonStyle(.plain)
-            .help("Đóng")
+            .help(L("Close"))
         }
         .padding(.horizontal, 18)
         .frame(height: 40)

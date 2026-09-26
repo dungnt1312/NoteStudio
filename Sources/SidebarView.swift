@@ -33,7 +33,7 @@ struct SidebarView: View {
     private var topBar: some View {
         HStack(spacing: 2) {
             WindowDragArea()
-            IconButton(systemName: "sidebar.left", help: "Ẩn thanh bên (⌃⌘S)") {
+            IconButton(systemName: "sidebar.left", help: L("Hide Sidebar (⌃⌘S)")) {
                 withAnimation(.easeInOut(duration: 0.2)) { store.sidebarVisible = false }
             }
             NewItemButton()
@@ -52,7 +52,7 @@ struct SidebarView: View {
                     .font(.system(size: 14))
                     .foregroundStyle(Studio.textSecondary)
                     .frame(width: 18)
-                Text("Cài đặt")
+                Text(L("Settings"))
                     .font(Studio.Typo.callout(.medium))
                     .foregroundStyle(Studio.textPrimary)
                 Spacer()
@@ -69,7 +69,7 @@ struct NewItemButton: View {
 
     var body: some View {
         let chat = store.lastWorkspace == .chat
-        IconButton(systemName: "square.and.pencil", help: chat ? "Hội thoại mới (⌘⇧O)" : "Ghi chú mới (⌘N)") {
+        IconButton(systemName: "square.and.pencil", help: chat ? L("New Chat (⌘⇧O)") : L("New Note (⌘N)")) {
             if chat {
                 store.newChatSession()
                 store.activeSection = .chat
@@ -87,7 +87,7 @@ struct SidebarRevealControls: View {
     var body: some View {
         if !store.sidebarVisible {
             HStack(spacing: 2) {
-                IconButton(systemName: "sidebar.left", help: "Hiện thanh bên (⌃⌘S)") {
+                IconButton(systemName: "sidebar.left", help: L("Show Sidebar (⌃⌘S)")) {
                     withAnimation(.easeInOut(duration: 0.2)) { store.sidebarVisible = true }
                 }
                 NewItemButton()
@@ -106,8 +106,8 @@ private struct WorkspaceSwitcher: View {
 
     var body: some View {
         HStack(spacing: 2) {
-            segment(.notes, icon: "doc.text", label: "Ghi chú")
-            segment(.chat, icon: "sparkles", label: "Trợ lý")
+            segment(.notes, icon: "doc.text", label: L("Notes"))
+            segment(.chat, icon: "sparkles", label: L("Assistant"))
         }
         .padding(3)
         .background(RoundedRectangle(cornerRadius: 10).fill(Studio.hover))
@@ -140,7 +140,7 @@ private struct WorkspaceSwitcher: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(section == .notes ? "Ghi chú (⌘1)" : "Trợ lý AI (⌘2)")
+        .help(section == .notes ? L("Notes (⌘1)") : L("AI Assistant (⌘2)"))
     }
 }
 
@@ -162,13 +162,11 @@ private struct NoteListView: View {
 
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 1) {
-                    if !store.pinnedNotes.isEmpty {
-                        SidebarSectionLabel(text: "Đã ghim")
-                        ForEach(store.pinnedNotes) { row($0) }
-                    }
-                    ForEach(TimeBucket.group(store.otherNotes, by: \.updatedAt), id: \.0) { bucket, notes in
-                        SidebarSectionLabel(text: bucket.label)
-                        ForEach(notes) { row($0) }
+                    ForEach(entries) { entry in
+                        switch entry {
+                        case .header(_, let text): SidebarSectionLabel(text: text)
+                        case .item(let note): row(note)
+                        }
                     }
                     if store.filteredNotes.isEmpty {
                         emptyPlaceholder
@@ -180,12 +178,21 @@ private struct NoteListView: View {
         }
     }
 
+    private var entries: [SidebarEntry<Note>] {
+        var result: [SidebarEntry<Note>] = []
+        if !store.pinnedNotes.isEmpty {
+            result.append(.header(id: "pinned", text: L("Pinned")))
+            result += store.pinnedNotes.map { .item($0) }
+        }
+        return result + SidebarEntry.grouped(store.otherNotes, by: \.updatedAt)
+    }
+
     private var searchField: some View {
         HStack(spacing: 7) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 12))
                 .foregroundColor(Studio.textTertiary)
-            TextField("Tìm ghi chú", text: $store.searchText)
+            TextField(L("Search notes"), text: $store.searchText)
                 .textFieldStyle(.plain)
                 .font(Studio.Typo.callout())
                 .foregroundStyle(Studio.textPrimary)
@@ -258,20 +265,20 @@ private struct NoteListView: View {
             Button {
                 store.togglePin(noteID: note.id)
             } label: {
-                Label(note.pinned ? "Bỏ ghim" : "Ghim lên đầu", systemImage: note.pinned ? "pin.slash" : "pin")
+                Label(note.pinned ? L("Unpin") : L("Pin to Top"), systemImage: note.pinned ? "pin.slash" : "pin")
             }
             Button {
                 store.activeSection = .notes
                 store.select(note.id)
                 store.showAssistant = true
             } label: {
-                Label("Hỏi trợ lý về ghi chú này", systemImage: "sparkles")
+                Label(L("Ask AI about this note"), systemImage: "sparkles")
             }
             Divider()
             Button(role: .destructive) {
                 store.delete(noteID: note.id)
             } label: {
-                Label("Xóa ghi chú", systemImage: "trash")
+                Label(L("Delete Note"), systemImage: "trash")
             }
         }
     }
@@ -281,11 +288,11 @@ private struct NoteListView: View {
             Image(systemName: store.notes.isEmpty ? "square.and.pencil" : "magnifyingglass")
                 .font(.system(size: 20, weight: .light))
                 .foregroundColor(Studio.textTertiary)
-            Text(store.notes.isEmpty ? "Chưa có ghi chú nào" : "Không tìm thấy ghi chú")
+            Text(store.notes.isEmpty ? L("No notes yet") : L("No notes found"))
                 .font(Studio.Typo.callout())
                 .foregroundColor(Studio.textSecondary)
             if !store.notes.isEmpty, store.activeTagFilter != nil || !store.searchText.isEmpty {
-                Button("Xóa bộ lọc") {
+                Button(L("Clear Filter")) {
                     store.searchText = ""
                     store.activeTagFilter = nil
                 }
@@ -322,7 +329,7 @@ private struct NoteRowContent: View {
                 Text(note.updatedAt.studioShort)
                     .foregroundStyle(Studio.textSecondary)
                     .layoutPriority(1)
-                Text(note.snippet.isEmpty ? "Chưa có nội dung" : note.snippet)
+                Text(note.snippet.isEmpty ? L("No content yet") : note.snippet)
                     .foregroundStyle(Studio.textTertiary)
                     .lineLimit(1)
             }
@@ -344,9 +351,11 @@ private struct SessionListView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 1) {
-                ForEach(TimeBucket.group(store.chatSessions, by: \.updatedAt), id: \.0) { bucket, sessions in
-                    SidebarSectionLabel(text: bucket.label)
-                    ForEach(sessions) { session in
+                ForEach(SidebarEntry.grouped(store.chatSessions, by: \.updatedAt)) { entry in
+                    switch entry {
+                    case .header(_, let text):
+                        SidebarSectionLabel(text: text)
+                    case .item(let session):
                         SessionRow(
                             session: session,
                             isActive: session.id == store.activeChatSessionID && store.activeSection == .chat,
@@ -390,9 +399,9 @@ private struct SessionRow: View {
                 Spacer(minLength: 0)
                 if hovering || isActive {
                     Menu {
-                        Button("Đổi tên", action: onRename)
+                        Button(L("Rename"), action: onRename)
                         Divider()
-                        Button("Xóa hội thoại", role: .destructive, action: onDelete)
+                        Button(L("Delete Chat"), role: .destructive, action: onDelete)
                     } label: {
                         Image(systemName: "ellipsis")
                             .font(.system(size: 13))
@@ -401,21 +410,42 @@ private struct SessionRow: View {
                     .menuIndicator(.hidden)
                     .foregroundStyle(Studio.textSecondary)
                     .fixedSize()
-                    .help("Tùy chọn")
+                    .help(L("Options"))
                 }
             }
             .frame(height: 22)
         }
         .onHover { hovering = $0 }
         .contextMenu {
-            Button("Đổi tên", action: onRename)
+            Button(L("Rename"), action: onRename)
             Divider()
-            Button("Xóa hội thoại", role: .destructive, action: onDelete)
+            Button(L("Delete Chat"), role: .destructive, action: onDelete)
         }
     }
 }
 
 // MARK: - Thành phần chung của sidebar
+
+/// Danh sách phẳng (tiêu đề nhóm + dòng) cho một ForEach duy nhất.
+/// ForEach lồng nhau trong LazyVStack không vẽ lại dòng khi nhóm đổi (vd. qua nửa đêm "Hôm nay" → "Hôm qua"),
+/// làm dòng đang chọn không còn sáng lên.
+enum SidebarEntry<Item: Identifiable>: Identifiable where Item.ID == UUID {
+    case header(id: String, text: String)
+    case item(Item)
+
+    var id: String {
+        switch self {
+        case .header(let id, _): return "header-\(id)"
+        case .item(let item): return item.id.uuidString
+        }
+    }
+
+    static func grouped(_ items: [Item], by date: (Item) -> Date) -> [SidebarEntry] {
+        TimeBucket.group(items, by: date).flatMap { bucket, list in
+            [.header(id: "\(bucket.rawValue)", text: bucket.label)] + list.map { .item($0) }
+        }
+    }
+}
 
 struct SidebarSectionLabel: View {
     let text: String
@@ -473,16 +503,16 @@ private struct SessionRenameAlert: ViewModifier {
     @Binding var draft: String
 
     func body(content: Content) -> some View {
-        content.alert("Đổi tên hội thoại", isPresented: Binding(
+        content.alert(L("Rename Chat"), isPresented: Binding(
             get: { session != nil },
             set: { if !$0 { session = nil } }
         )) {
-            TextField("Tên hội thoại", text: $draft)
-            Button("Lưu") {
+            TextField(L("Chat name"), text: $draft)
+            Button(L("Save")) {
                 if let session { store.renameSession(session.id, to: draft) }
                 session = nil
             }
-            Button("Hủy", role: .cancel) { session = nil }
+            Button(L("Cancel"), role: .cancel) { session = nil }
         }
     }
 }
@@ -493,17 +523,17 @@ private struct SessionDeleteDialog: ViewModifier {
 
     func body(content: Content) -> some View {
         content.confirmationDialog(
-            "Xóa hội thoại “\(session?.title ?? "")”?",
+            Lf("Delete chat “%@”?", session?.title ?? ""),
             isPresented: Binding(get: { session != nil }, set: { if !$0 { session = nil } }),
             titleVisibility: .visible
         ) {
-            Button("Xóa", role: .destructive) {
+            Button(L("Delete"), role: .destructive) {
                 if let session { store.deleteSession(session.id) }
                 session = nil
             }
-            Button("Hủy", role: .cancel) { session = nil }
+            Button(L("Cancel"), role: .cancel) { session = nil }
         } message: {
-            Text("Toàn bộ tin nhắn trong hội thoại này sẽ bị xóa. Ghi chú không bị ảnh hưởng.")
+            Text(L("All messages in this chat will be deleted. Notes are not affected."))
         }
     }
 }

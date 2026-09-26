@@ -4,6 +4,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var store: NotesStore
+    @ObservedObject private var localization = LocalizationManager.shared
     @State private var providers: [LLMService.Provider] = LLMService.providers
     @State private var activeID: UUID? = LLMService.activeProviderID
     @State private var appearance = AppearanceMode.current
@@ -19,11 +20,12 @@ struct SettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
-                    Text("Cài đặt")
+                    Text(L("Settings"))
                         .font(Studio.Typo.largeTitle())
                         .foregroundStyle(Studio.textPrimary)
 
                     appearanceSection
+                    languageSection
                     providersSection
                     syncSection
                     aboutSection
@@ -35,24 +37,24 @@ struct SettingsView: View {
             }
         }
         .confirmationDialog(
-            "Xóa provider “\(providerToDelete?.name ?? "")”?",
+            Lf("Delete provider “%@”?", providerToDelete?.name ?? ""),
             isPresented: Binding(get: { providerToDelete != nil }, set: { if !$0 { providerToDelete = nil } }),
             titleVisibility: .visible
         ) {
-            Button("Xóa provider và API key", role: .destructive) {
+            Button(L("Delete provider and API key"), role: .destructive) {
                 if let provider = providerToDelete { remove(provider) }
                 providerToDelete = nil
             }
-            Button("Hủy", role: .cancel) { providerToDelete = nil }
+            Button(L("Cancel"), role: .cancel) { providerToDelete = nil }
         } message: {
-            Text("API key đã lưu cho provider này cũng sẽ bị xóa khỏi máy.")
+            Text(L("The stored API key for this provider will also be removed from this Mac."))
         }
     }
 
     // MARK: Giao diện
 
     private var appearanceSection: some View {
-        SettingsSection(title: "Giao diện") {
+        SettingsSection(title: L("Appearance")) {
             HStack(spacing: 10) {
                 ForEach(AppearanceMode.allCases) { mode in
                     AppearanceOption(mode: mode, selected: appearance == mode) {
@@ -64,12 +66,28 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: Ngôn ngữ
+
+    private var languageSection: some View {
+        SettingsSection(title: L("Language")) {
+            SettingsCard {
+                HStack(spacing: 10) {
+                    ForEach(AppLanguage.allCases) { language in
+                        LanguageOption(language: language, selected: localization.language == language) {
+                            localization.set(language)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: AI Providers
 
     private var providersSection: some View {
         SettingsSection(
-            title: "Nhà cung cấp AI",
-            caption: "Mọi dịch vụ theo chuẩn OpenAI: OpenAI, OpenRouter, Groq, Ollama chạy local, vLLM…"
+            title: L("AI Providers"),
+            caption: L("Any OpenAI-compatible service: OpenAI, OpenRouter, Groq, local Ollama, vLLM…")
         ) {
             VStack(spacing: 12) {
                 ForEach($providers) { $provider in
@@ -103,7 +121,7 @@ struct SettingsView: View {
     private var addProviderButton: some View {
         Button {
             let provider = LLMService.Provider(
-                name: "Provider mới",
+                name: L("New provider"),
                 baseURL: LLMService.defaultBaseURL,
                 model: LLMService.defaultModel
             )
@@ -113,7 +131,7 @@ struct SettingsView: View {
             HStack(spacing: 6) {
                 Image(systemName: "plus")
                     .font(.system(size: 12, weight: .semibold))
-                Text("Thêm provider")
+                Text(L("Add provider"))
                     .font(Studio.Typo.callout(.medium))
             }
             .foregroundStyle(Studio.textSecondary)
@@ -131,16 +149,16 @@ struct SettingsView: View {
     // MARK: Đồng bộ
 
     private var syncSection: some View {
-        SettingsSection(title: "Đồng bộ") {
+        SettingsSection(title: L("Sync")) {
             SettingsCard {
                 HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Sao lưu qua iCloud Drive")
+                        Text(L("Back up via iCloud Drive"))
                             .font(Studio.Typo.callout(.medium))
                             .foregroundStyle(Studio.textPrimary)
                         Text(NotesStore.iCloudAvailable
-                            ? "Mỗi lần lưu, ghi chú được sao sang iCloud Drive/NoteStudio. Khi mở app, bản sửa gần nhất giữa máy này và iCloud sẽ được giữ."
-                            : "Không tìm thấy iCloud Drive trên máy này.")
+                            ? L("On every save, notes are mirrored to iCloud Drive/NoteStudio. When opening the app, the most recent edit between this Mac and iCloud wins.")
+                            : L("iCloud Drive was not found on this Mac."))
                             .font(Studio.Typo.footnote())
                             .foregroundStyle(Studio.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -165,18 +183,18 @@ struct SettingsView: View {
     // MARK: Giới thiệu + phím tắt
 
     private var aboutSection: some View {
-        SettingsSection(title: "Phím tắt & thông tin") {
+        SettingsSection(title: L("Shortcuts & About")) {
             SettingsCard(padding: 0) {
                 VStack(spacing: 0) {
-                    shortcutRow("Ghi chú mới", "⌘N")
-                    shortcutRow("Hội thoại mới", "⌘⇧O")
-                    shortcutRow("Chuyển Ghi chú / Trợ lý", "⌘1  ⌘2")
-                    shortcutRow("Trợ lý bên cạnh ghi chú", "⌘⇧J")
-                    shortcutRow("Bảng lệnh", "⌘K")
-                    shortcutRow("Ẩn / hiện thanh bên", "⌃⌘S")
-                    shortcutRow("Hoàn tác xóa", "⌘Z")
-                    infoRow("Dữ liệu", "~/Library/Application Support/NoteStudio")
-                    infoRow("MCP server", "notestudio-mcp — cho AI client bên ngoài đọc/ghi ghi chú", last: true)
+                    shortcutRow(L("New note"), "⌘N")
+                    shortcutRow(L("New chat"), "⌘⇧O")
+                    shortcutRow(L("Switch Notes / Assistant"), "⌘1  ⌘2")
+                    shortcutRow(L("Assistant panel next to note"), "⌘⇧J")
+                    shortcutRow(L("Command Palette"), "⌘K")
+                    shortcutRow(L("Hide / show sidebar"), "⌃⌘S")
+                    shortcutRow(L("Undo delete"), "⌘Z")
+                    infoRow(L("Data"), "~/Library/Application Support/NoteStudio")
+                    infoRow("MCP server", L("notestudio-mcp — lets external AI clients read and write notes"), last: true)
                 }
             }
         }
@@ -243,35 +261,35 @@ private struct ProviderCard: View {
                             .foregroundStyle(isActive ? Studio.textPrimary : Studio.textTertiary)
                     }
                     .buttonStyle(.plain)
-                    .help(isActive ? "Đang dùng" : "Dùng provider này")
+                    .help(isActive ? L("Active") : L("Use this provider"))
 
-                    TextField("Tên provider", text: $provider.name)
+                    TextField(L("Provider name"), text: $provider.name)
                         .textFieldStyle(.plain)
                         .font(Studio.Typo.body(.semibold))
                         .foregroundStyle(Studio.textPrimary)
 
                     if isActive {
-                        Text("Đang dùng")
+                        Text(L("Active"))
                             .font(Studio.Typo.caption(.semibold))
                             .foregroundStyle(Studio.accentForeground)
                             .padding(.horizontal, 8)
                             .frame(height: 20)
                             .background(Capsule().fill(Studio.accent))
                     } else {
-                        Button("Dùng", action: onActivate)
+                        Button(L("Use"), action: onActivate)
                             .buttonStyle(SecondaryButtonStyle())
                             .controlSize(.small)
                     }
 
                     if canDelete {
-                        IconButton(systemName: "trash", help: "Xóa provider (kèm API key)", action: onDelete)
+                        IconButton(systemName: "trash", help: L("Delete provider (with API key)"), action: onDelete)
                     }
                 }
 
                 field("Base URL", text: $provider.baseURL, placeholder: LLMService.defaultBaseURL)
                 field("Model", text: $provider.model, placeholder: LLMService.defaultModel)
-                field("API key", text: keyBinding, placeholder: "sk-… (để trống nếu không cần)", secure: true,
-                      caption: "Lưu cục bộ trên máy, không đồng bộ đi đâu.")
+                field(L("API key"), text: keyBinding, placeholder: L("sk-… (leave empty if not required)"), secure: true,
+                      caption: L("Stored locally on this Mac, never synced."))
 
                 HStack(spacing: 10) {
                     Button {
@@ -284,7 +302,7 @@ private struct ProviderCard: View {
                                 Image(systemName: "bolt.horizontal")
                                     .font(.system(size: 11, weight: .semibold))
                             }
-                            Text("Kiểm tra kết nối")
+                            Text(L("Test connection"))
                         }
                     }
                     .buttonStyle(SecondaryButtonStyle())
@@ -325,12 +343,12 @@ private struct ProviderCard: View {
             let started = Date()
             do {
                 _ = try await LLMService.chat(
-                    messages: [["role": "user", "content": "ping — trả lời đúng một chữ: ok"]],
+                    messages: [["role": "user", "content": L("ping — reply with exactly one word: ok")]],
                     temperature: 0,
                     provider: target
                 )
                 let ms = Int(Date().timeIntervalSince(started) * 1000)
-                testState = .ok("Kết nối được · \(ms) ms")
+                testState = .ok(Lf("Connected · %d ms", ms))
             } catch {
                 testState = .failed(error.localizedDescription)
             }
@@ -461,5 +479,36 @@ private struct AppearanceOption: View {
                 .padding(10)
             }
         }
+    }
+}
+
+// MARK: - Ô chọn ngôn ngữ: System / English / Tiếng Việt
+
+private struct LanguageOption: View {
+    let language: AppLanguage
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Text(language.label)
+                    .font(Studio.Typo.callout(selected ? .semibold : .regular))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+                    .background(
+                        RoundedRectangle(cornerRadius: Studio.Radius.small)
+                            .fill(selected ? Studio.selected : Studio.background)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Studio.Radius.small)
+                            .stroke(selected ? Studio.textPrimary : Studio.hairline, lineWidth: selected ? 1.5 : 1)
+                    )
+            }
+            .foregroundStyle(selected ? Studio.textPrimary : Studio.textSecondary)
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }

@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 enum ExportService {
     static func exportPDF(note: Note) {
         let panel = NSSavePanel()
-        panel.title = "Xuất ghi chú ra PDF"
+        panel.title = L("Export Note as PDF")
         panel.allowedContentTypes = [.pdf]
         panel.canCreateDirectories = true
         panel.nameFieldStringValue = fileName(note: note)
@@ -18,7 +18,7 @@ enum ExportService {
         } catch {
             let alert = NSAlert()
             alert.alertStyle = .critical
-            alert.messageText = "Không xuất được PDF"
+            alert.messageText = L("Couldn't export PDF")
             alert.informativeText = error.localizedDescription
             alert.runModal()
         }
@@ -27,7 +27,7 @@ enum ExportService {
     /// Ghi chú vốn là Markdown: xuất nguyên văn ra file .md
     static func exportMarkdown(note: Note) {
         let panel = NSSavePanel()
-        panel.title = "Xuất ghi chú ra Markdown"
+        panel.title = L("Export Note as Markdown")
         panel.allowedContentTypes = [UTType(filenameExtension: "md") ?? .plainText]
         panel.canCreateDirectories = true
         panel.nameFieldStringValue = String(fileName(note: note).dropLast(4)) + ".md"
@@ -39,7 +39,7 @@ enum ExportService {
         } catch {
             let alert = NSAlert()
             alert.alertStyle = .critical
-            alert.messageText = "Không xuất được file .md"
+            alert.messageText = L("Couldn't export the .md file")
             alert.informativeText = error.localizedDescription
             alert.runModal()
         }
@@ -50,7 +50,7 @@ enum ExportService {
             .replacingOccurrences(of: "/", with: "-")
             .replacingOccurrences(of: ":", with: "-")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        return base.isEmpty ? "Ghi chu.pdf" : base + ".pdf"
+        return base.isEmpty ? L("Untitled") + ".pdf" : base + ".pdf"
     }
 
     static func writePDF(note: Note, to url: URL) throws {
@@ -66,11 +66,11 @@ enum ExportService {
 
         let data = NSMutableData()
         guard let consumer = CGDataConsumer(data: data as CFMutableData) else {
-            throw ExportFailure(errorDescription: "Không tạo được PDF consumer")
+            throw ExportFailure(errorDescription: L("Couldn't create the PDF consumer"))
         }
         var mediaBox = pageRect
         guard let pdf = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else {
-            throw ExportFailure(errorDescription: "Không tạo được PDF context")
+            throw ExportFailure(errorDescription: L("Couldn't create the PDF context"))
         }
 
         let framesetter = CTFramesetterCreateWithAttributedString(flow as CFAttributedString)
@@ -112,7 +112,7 @@ enum ExportService {
             NSAttributedString.Key(kCTForegroundColorAttributeName as String): black
         ]))
         result.append(NSAttributedString(
-            string: "\(note.createdAt.studioDate) · \(note.wordCount) từ · \(note.content.count) ký tự\n\n",
+            string: Lf("%1$@ · %2$d words · %3$d characters", note.createdAt.studioDate, note.wordCount, note.content.count) + "\n\n",
             attributes: [
                 NSAttributedString.Key(kCTFontAttributeName as String): systemFont(size: 10.5),
                 NSAttributedString.Key(kCTForegroundColorAttributeName as String): midGray

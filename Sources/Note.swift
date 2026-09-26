@@ -30,7 +30,7 @@ struct Note: Identifiable, Codable, Equatable {
 extension Note {
     var displayTitle: String {
         if !title.isEmpty { return title }
-        return Note.plainLines(content).first.map { String($0.prefix(80)) } ?? "Không có tiêu đề"
+        return Note.plainLines(content).first.map { String($0.prefix(80)) } ?? L("Untitled")
     }
     var displayTags: [String] { tags ?? [] }
     var wordCount: Int { content.split(whereSeparator: \.isWhitespace).filter { $0 != "#" }.count }

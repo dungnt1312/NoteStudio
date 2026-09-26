@@ -18,9 +18,9 @@ enum EditorMode: String, CaseIterable {
 
     var help: String {
         switch self {
-        case .live: return "Soạn trực quan"
-        case .source: return "Mã nguồn Markdown"
-        case .preview: return "Xem trước (chỉ đọc)"
+        case .live: return L("Live editing")
+        case .source: return L("Markdown source")
+        case .preview: return L("Preview (read-only)")
         }
     }
 }
@@ -71,7 +71,7 @@ struct EditorView: View {
                         .foregroundStyle(Studio.textSecondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                    Text("· Đã lưu \(note.updatedAt.studioRelative)")
+                    Text(Lf("· Saved %@", note.updatedAt.studioRelative))
                         .lineLimit(1)
                         .layoutPriority(-1)
                 }
@@ -86,7 +86,7 @@ struct EditorView: View {
                 modeSwitch
                     .padding(.trailing, 4)
                 IconButton(systemName: note.pinned ? "pin.fill" : "pin", active: note.pinned,
-                           help: note.pinned ? "Bỏ ghim" : "Ghim lên đầu danh sách") {
+                           help: note.pinned ? L("Unpin") : L("Pin to top of list")) {
                     store.togglePin(noteID: note.id)
                 }
                 moreMenu(note)
@@ -126,7 +126,7 @@ struct EditorView: View {
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 13, weight: .medium))
-                Text("Trợ lý")
+                Text(L("Assistant"))
                     .font(Studio.Typo.callout(.medium))
             }
             .foregroundStyle(store.showAssistant ? Studio.accentForeground : Studio.textPrimary)
@@ -137,40 +137,40 @@ struct EditorView: View {
         }
         .buttonStyle(.plain)
         .padding(.leading, 6)
-        .help(store.showAssistant ? "Ẩn trợ lý (⌘⇧J)" : "Mở trợ lý bên cạnh ghi chú (⌘⇧J)")
+        .help(store.showAssistant ? L("Hide Assistant (⌘⇧J)") : L("Open Assistant Panel (⌘⇧J)"))
     }
 
     private func moreMenu(_ note: Note) -> some View {
-        IconMenu(help: "Thêm thao tác") {
+        IconMenu(help: L("More actions")) {
             Button {
                 copyContent(note)
             } label: {
-                Label("Sao chép Markdown", systemImage: "doc.on.doc")
+                Label(L("Copy Markdown"), systemImage: "doc.on.doc")
             }
             Button {
                 ExportService.exportMarkdown(note: note)
             } label: {
-                Label("Xuất file .md…", systemImage: "arrow.down.doc")
+                Label(L("Export as .md…"), systemImage: "arrow.down.doc")
             }
             Button {
                 ExportService.exportPDF(note: note)
             } label: {
-                Label("Xuất ra PDF…", systemImage: "doc.richtext")
+                Label(L("Export as PDF…"), systemImage: "doc.richtext")
             }
             Divider()
             Button {
                 suggestTitle()
             } label: {
-                Label("AI gợi ý tiêu đề", systemImage: "sparkles")
+                Label(L("Suggest Title with AI"), systemImage: "sparkles")
             }
             .disabled(note.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             Divider()
-            Section("Tạo \(note.createdAt.studioDateTime) · \(note.wordCount) từ · \(note.content.count) ký tự") {}
+            Section(Lf("%1$@ · %2$d words · %3$d characters", note.createdAt.studioDateTime, note.wordCount, note.content.count)) {}
             Divider()
             Button(role: .destructive) {
                 store.delete(noteID: note.id)
             } label: {
-                Label("Xóa ghi chú", systemImage: "trash")
+                Label(L("Delete Note"), systemImage: "trash")
             }
         }
     }
@@ -219,31 +219,31 @@ struct EditorView: View {
     private func formatBar(_ note: Note) -> some View {
         HStack(spacing: 2) {
             if mode == .preview {
-                Text("Chế độ xem trước — bấm ✎ để sửa")
+                Text(L("Preview mode — click ✎ to edit"))
                     .font(Studio.Typo.footnote())
                     .foregroundStyle(Studio.textTertiary)
                     .padding(.leading, 6)
             } else {
-                FormatTextButton(label: "¶", help: "Đoạn văn thường (⌥⌘0)") { bridge.paragraph() }
-                FormatTextButton(label: "H1", help: "Tiêu đề 1 (⌥⌘1)") { bridge.heading(1) }
-                FormatTextButton(label: "H2", help: "Tiêu đề 2 (⌥⌘2)") { bridge.heading(2) }
-                FormatTextButton(label: "H3", help: "Tiêu đề 3 (⌥⌘3)") { bridge.heading(3) }
+                FormatTextButton(label: "¶", help: L("Plain paragraph (⌥⌘0)")) { bridge.paragraph() }
+                FormatTextButton(label: "H1", help: L("Heading 1 (⌥⌘1)")) { bridge.heading(1) }
+                FormatTextButton(label: "H2", help: L("Heading 2 (⌥⌘2)")) { bridge.heading(2) }
+                FormatTextButton(label: "H3", help: L("Heading 3 (⌥⌘3)")) { bridge.heading(3) }
                 EditorToolDivider()
-                FormatTextButton(label: "B", weight: .bold, help: "Đậm (⌘B)") { bridge.bold() }
-                FormatTextButton(label: "I", italic: true, help: "Nghiêng (⌘I)") { bridge.italic() }
-                FormatTextButton(label: "S", strike: true, help: "Gạch ngang (⌘⇧X)") { bridge.strikethrough() }
+                FormatTextButton(label: "B", weight: .bold, help: L("Bold (⌘B)")) { bridge.bold() }
+                FormatTextButton(label: "I", italic: true, help: L("Italic (⌘I)")) { bridge.italic() }
+                FormatTextButton(label: "S", strike: true, help: L("Strikethrough (⌘⇧X)")) { bridge.strikethrough() }
                 EditorToolDivider()
-                EditorToolButton(icon: "list.bullet", help: "Danh sách") { bridge.toggleBullets() }
-                EditorToolButton(icon: "list.number", help: "Danh sách số") { bridge.toggleNumbered() }
-                EditorToolButton(icon: "checklist", help: "Việc cần làm (⌘⇧↩ tick/bỏ tick)") { bridge.toggleChecklist() }
+                EditorToolButton(icon: "list.bullet", help: L("Bulleted list")) { bridge.toggleBullets() }
+                EditorToolButton(icon: "list.number", help: L("Numbered list")) { bridge.toggleNumbered() }
+                EditorToolButton(icon: "checklist", help: L("Checklist (⌘⇧↩ to tick)")) { bridge.toggleChecklist() }
                 EditorToolDivider()
-                EditorToolButton(icon: "text.quote", help: "Trích dẫn") { bridge.toggleQuote() }
-                EditorToolButton(icon: "link", help: "Liên kết") { bridge.link() }
-                EditorToolButton(icon: "chevron.left.forwardslash.chevron.right", help: "Mã inline (⌘E)") { bridge.inlineCode() }
+                EditorToolButton(icon: "text.quote", help: L("Quote")) { bridge.toggleQuote() }
+                EditorToolButton(icon: "link", help: L("Link")) { bridge.link() }
+                EditorToolButton(icon: "chevron.left.forwardslash.chevron.right", help: L("Inline code (⌘E)")) { bridge.inlineCode() }
                 Menu {
-                    Button { bridge.codeBlock() } label: { Label("Khối mã", systemImage: "curlybraces.square") }
-                    Button { bridge.table() } label: { Label("Bảng", systemImage: "tablecells") }
-                    Button { bridge.rule() } label: { Label("Đường kẻ ngang", systemImage: "minus") }
+                    Button { bridge.codeBlock() } label: { Label(L("Code block"), systemImage: "curlybraces.square") }
+                    Button { bridge.table() } label: { Label(L("Table"), systemImage: "tablecells") }
+                    Button { bridge.rule() } label: { Label(L("Horizontal rule"), systemImage: "minus") }
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 13, weight: .medium))
@@ -253,14 +253,14 @@ struct EditorView: View {
                 .foregroundStyle(Studio.textSecondary)
                 .frame(width: 30, height: 28)
                 .fixedSize()
-                .help("Chèn thêm")
+                .help(L("Insert"))
             }
             Spacer(minLength: 12)
             Text(statsText(note))
                 .font(Studio.Typo.footnote())
                 .foregroundStyle(Studio.textTertiary)
                 .lineLimit(1)
-                .help("⌘F tìm trong ghi chú")
+                .help(L("⌘F to search inside the note"))
         }
         .padding(.horizontal, 12)
         .frame(height: 40)
@@ -272,7 +272,7 @@ struct EditorView: View {
             TagStrip(note: note, aiError: $aiError)
             if titleBusy {
                 ProgressView().controlSize(.small)
-                Text("AI đang đặt tiêu đề…")
+                Text(L("AI is naming the note…"))
                     .font(Studio.Typo.footnote())
                     .foregroundStyle(Studio.textTertiary)
             }
@@ -292,11 +292,11 @@ struct EditorView: View {
 
     private func statsText(_ note: Note) -> String {
         let words = note.wordCount
-        guard words > 0 else { return "0 từ" }
+        guard words > 0 else { return L("0 words") }
         if words > 200 {
-            return "\(words) từ · \(max(1, words / 220)) phút đọc"
+            return Lf("%1$d words · %2$d min read", words, max(1, words / 220))
         }
-        return "\(words) từ"
+        return Lf("%d words", words)
     }
 
     // MARK: Quick AI — bôi đen đoạn văn → chọn hành động → gửi sang trợ lý bên cạnh
@@ -307,10 +307,10 @@ struct EditorView: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Studio.textSecondary)
                 .padding(.leading, 4)
-            quickButton("Giải thích", instruction: "Giải thích chi tiết, dễ hiểu đoạn văn sau", selection: selection)
-            quickButton("Dịch sang Anh", instruction: "Dịch đoạn văn sau sang tiếng Anh", selection: selection)
-            quickButton("Rút gọn", instruction: "Rút gọn đoạn văn sau nhưng giữ đủ ý chính", selection: selection)
-            quickButton("Phản biện", instruction: "Phản biện và góp ý cải thiện đoạn văn sau", selection: selection)
+            quickButton(L("Explain"), instruction: L("Explain the following paragraph in detail, in plain language"), selection: selection)
+            quickButton(L("Translate to English"), instruction: L("Translate the following paragraph into English"), selection: selection)
+            quickButton(L("Shorten"), instruction: L("Shorten the following paragraph while keeping the key points"), selection: selection)
+            quickButton(L("Critique"), instruction: L("Critique the following paragraph and suggest improvements"), selection: selection)
             Button {
                 selectedText = nil
             } label: {
@@ -320,7 +320,7 @@ struct EditorView: View {
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
-            .help("Đóng")
+            .help(L("Close"))
         }
         .padding(5)
         .background(
@@ -342,8 +342,8 @@ struct EditorView: View {
     private func submitQuickAI(instruction: String, selection: String) {
         guard let note = store.selectedNote else { return }
         let mention = MentionedNote(id: note.id, title: note.displayTitle)
-        let bubbleText = instruction + " (đoạn đang chọn trong @\(note.displayTitle))"
-        let prompt = "\(instruction):\n\n\"\(selection)\"\n\n(Đoạn trên trích từ ghi chú @\(note.displayTitle).)"
+        let bubbleText = Lf("%@ (selected text in @%@)", instruction, note.displayTitle)
+        let prompt = Lf("%1$@:\n\n“%2$@”\n\n(The above is an excerpt from note @%3$@.)", instruction, selection, note.displayTitle)
         selectedText = nil
         withAnimation(.easeInOut(duration: 0.22)) {
             store.showAssistant = true
@@ -373,7 +373,7 @@ struct EditorView: View {
     private func copyContent(_ note: Note) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(note.content, forType: .string)
-        store.showToast(StudioToast(message: "Đã sao chép Markdown của ghi chú"))
+        store.showToast(StudioToast(message: L("Note Markdown copied")))
     }
 
     // MARK: Bindings
@@ -393,17 +393,17 @@ struct EditorView: View {
             Image(systemName: "square.and.pencil")
                 .font(.system(size: 36, weight: .light))
                 .foregroundStyle(Studio.textTertiary)
-            Text(store.notes.isEmpty ? "Chưa có ghi chú nào" : "Chọn một ghi chú để bắt đầu")
+            Text(store.notes.isEmpty ? L("No notes yet") : L("Select a note to get started"))
                 .font(Studio.Typo.headline())
                 .foregroundStyle(Studio.textPrimary)
-            Text("Ghi chú được lưu tự động ngay trên máy của bạn.")
+            Text(L("Notes are saved automatically, right on your Mac."))
                 .font(Studio.Typo.callout())
                 .foregroundStyle(Studio.textSecondary)
             HStack(spacing: 8) {
                 Button {
                     store.createNote()
                 } label: {
-                    Label("Ghi chú mới", systemImage: "plus")
+                    Label(L("New note"), systemImage: "plus")
                 }
                 .buttonStyle(PillButtonStyle())
                 Keycap(text: "⌘N")
@@ -512,7 +512,7 @@ private struct TagStrip: View {
             }
 
             if adding {
-                TextField("tên thẻ", text: $draft)
+                TextField(L("tag name"), text: $draft)
                     .textFieldStyle(.plain)
                     .font(Studio.Typo.footnote())
                     .foregroundStyle(Studio.textPrimary)
@@ -527,18 +527,18 @@ private struct TagStrip: View {
                         if !focused { commit(); adding = false }
                     }
             } else {
-                GhostChip(icon: "plus", label: note.displayTags.isEmpty ? "Thêm thẻ" : nil) {
+                GhostChip(icon: "plus", label: note.displayTags.isEmpty ? L("Add tag") : nil) {
                     adding = true
                     DispatchQueue.main.async { fieldFocused = true }
                 }
-                .help("Thêm thẻ")
+                .help(L("Add tag"))
             }
 
-            GhostChip(icon: "sparkles", label: suggesting ? "Đang gợi ý…" : "Gợi ý thẻ") {
+            GhostChip(icon: "sparkles", label: suggesting ? L("Suggesting…") : L("Suggest tags")) {
                 suggest()
             }
             .disabled(suggesting || note.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .help("Nhờ AI gợi ý thẻ từ nội dung")
+            .help(L("Let AI suggest tags from the content"))
         }
     }
 
@@ -599,7 +599,7 @@ private struct TagChip: View {
                         .foregroundStyle(Studio.textTertiary)
                 }
                 .buttonStyle(.plain)
-                .help("Bỏ thẻ")
+                .help(L("Remove tag"))
             }
         }
         .padding(.horizontal, 9)

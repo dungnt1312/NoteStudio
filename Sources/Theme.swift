@@ -4,7 +4,12 @@ import AppKit
 // MARK: - Design tokens theo phong cách ChatGPT (light + dark)
 
 enum Studio {
-    static let locale = Locale(identifier: "vi_VN")
+    /// Locale ngày giờ theo ngôn ngữ app (không cố định vi_VN nữa)
+    static var locale: Locale {
+        LocalizationManager.resolvedLanguage == .vietnamese
+            ? Locale(identifier: "vi_VN")
+            : Locale(identifier: "en_US")
+    }
 
     /// Màu động: tự chọn biến thể theo appearance hiện tại (aqua / darkAqua).
     private static func dynamic(_ light: UInt32, _ dark: UInt32) -> Color {
@@ -104,9 +109,9 @@ enum AppearanceMode: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .system: return "Theo hệ thống"
-        case .light: return "Sáng"
-        case .dark: return "Tối"
+        case .system: return L("System")
+        case .light: return L("Light")
+        case .dark: return L("Dark")
         }
     }
 
@@ -161,7 +166,7 @@ extension Date {
         if calendar.isDateInToday(self) {
             return formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(Studio.locale))
         }
-        if calendar.isDateInYesterday(self) { return "Hôm qua" }
+        if calendar.isDateInYesterday(self) { return L("Yesterday") }
         if let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: self), to: calendar.startOfDay(for: Date())).day,
            days < 7 {
             return formatted(Date.FormatStyle().weekday(.wide).locale(Studio.locale)).capitalized(with: Studio.locale)
@@ -176,11 +181,11 @@ enum TimeBucket: Int, CaseIterable {
 
     var label: String {
         switch self {
-        case .today: return "Hôm nay"
-        case .yesterday: return "Hôm qua"
-        case .week: return "7 ngày qua"
-        case .month: return "30 ngày qua"
-        case .older: return "Cũ hơn"
+        case .today: return L("Today")
+        case .yesterday: return L("Yesterday")
+        case .week: return L("Last 7 days")
+        case .month: return L("Last 30 days")
+        case .older: return L("Older")
         }
     }
 

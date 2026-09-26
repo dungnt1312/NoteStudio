@@ -40,7 +40,7 @@ else
 fi
 
 echo "▸ Building MCP server (notestudio-mcp)…"
-swiftc MCPServer/main.swift -o notestudio-mcp
+swiftc MCPServer/main.swift Sources/NoteFile.swift -o notestudio-mcp
 
 echo "▸ Codesigning (ad-hoc)…"
 codesign --force --sign - "$APP" >/dev/null 2>&1 || true

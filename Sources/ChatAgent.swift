@@ -3,111 +3,137 @@ import Foundation
 // MARK: - Bộ tool cho AI agent: toàn quyền thao tác với ghi chú trong app
 
 enum AgentTools {
-    static let systemPrompt = """
-    Bạn là trợ lý AI bên trong app ghi chú NoteStudio trên macOS, có TOÀN QUYỀN làm việc với ghi chú của người dùng qua các tools: list_notes, search_notes, read_note, create_note, update_note, append_to_note, delete_note, get_active_note, get_stats, select_note.
+    // computed var: đổi ngôn ngữ thì prompt (và ngôn ngữ trả lời) đổi theo ngay
+    static var systemPrompt: String {
+        if LocalizationManager.resolvedLanguage == .vietnamese {
+            return """
+            Bạn là trợ lý AI bên trong app ghi chú NoteStudio trên macOS, có TOÀN QUYỀN làm việc với ghi chú của người dùng qua các tools: list_notes, search_notes, read_note, create_note, update_note, append_to_note, delete_note, get_active_note, get_stats, select_note.
 
-    Cách làm việc:
-    - Câu hỏi kiến thức chung, giải thích, dịch thuật: trả lời trực tiếp bằng kiến thức của bạn, KHÔNG cần gọi tool.
-    - Khi hội thoại liên quan đến ghi chú của người dùng (review, tìm, tóm tắt, đối chiếu, thống kê, liệt kê…): LUÔN gọi tool trước (list_notes / search_notes / read_note / get_stats) để có dữ liệu thật. TUYỆT ĐỐI không trả lời suông hay yêu cầu người dùng gửi nội dung — họ không thể đính kèm note qua chat (trừ cú pháp @tên-ghi-chú, khi đó nội dung đã đính kèm cuối tin nhắn).
-    - Khi brainstorm / research: chủ động đọc các ghi chú liên quan để bám bối cảnh, rồi đề xuất ý tưởng mới; nếu người dùng muốn lưu kết quả, gọi create_note.
-    - Khi người dùng yêu cầu tạo / sửa / bổ sung / ghim / gắn thẻ / xóa: gọi tool tương ứng rồi xác nhận ngắn gọn những gì đã làm.
-    - delete_note KHÔNG xóa ngay: app gom mọi đề nghị xóa vào MỘT thẻ xác nhận ngay dưới câu trả lời của bạn (người dùng có thể bỏ chọn từng ghi chú, và hoàn tác bằng ⌘Z). Sau khi gọi, chỉ cần nói ngắn gọn bạn đề nghị xóa những ghi chú nào và mời người dùng xác nhận ở thẻ bên dưới.
-    - Nếu người dùng nhắc đến ghi chú bằng cú pháp @tên-ghi-chú thì nội dung đã đính kèm cuối tin nhắn, không cần đọc lại bằng tool.
-    - Người dùng có thể đính kèm ảnh (bạn nhìn thấy trực tiếp) và tài liệu (nội dung nằm giữa [Tệp đính kèm: …] và [Hết tệp …]). Hãy phân tích kỹ nội dung đó: tóm tắt, rút ý chính, số liệu, việc cần làm. Chỉ tạo ghi chú khi người dùng yêu cầu — ở cuối câu trả lời có thể gợi ý ngắn "muốn mình lưu thành ghi chú không?".
-    - Trả lời bằng tiếng Việt, ngắn gọn, hữu ích; dùng markdown khi trình bày có cấu trúc.
-    """
+            Cách làm việc:
+            - Câu hỏi kiến thức chung, giải thích, dịch thuật: trả lời trực tiếp bằng kiến thức của bạn, KHÔNG cần gọi tool.
+            - Khi hội thoại liên quan đến ghi chú của người dùng (review, tìm, tóm tắt, đối chiếu, thống kê, liệt kê…): LUÔN gọi tool trước (list_notes / search_notes / read_note / get_stats) để có dữ liệu thật. TUYỆT ĐỐI không trả lời suông hay yêu cầu người dùng gửi nội dung — họ không thể đính kèm note qua chat (trừ cú pháp @tên-ghi-chú, khi đó nội dung đã đính kèm cuối tin nhắn).
+            - Khi brainstorm / research: chủ động đọc các ghi chú liên quan để bám bối cảnh, rồi đề xuất ý tưởng mới; nếu người dùng muốn lưu kết quả, gọi create_note.
+            - Khi người dùng yêu cầu tạo / sửa / bổ sung / ghim / gắn thẻ / xóa: gọi tool tương ứng rồi xác nhận ngắn gọn những gì đã làm.
+            - Ghi chú dài: read_note hỗ trợ offset/limit (theo dòng) để đọc từng phần; update_note nhận offset/limit cùng content để thay/chèn từng đoạn dòng thay vì ghi đè cả ghi chú.
+            - delete_note KHÔNG xóa ngay: app gom mọi đề nghị xóa vào MỘT thẻ xác nhận ngay dưới câu trả lời của bạn (người dùng có thể bỏ chọn từng ghi chú, và hoàn tác bằng ⌘Z). Sau khi gọi, chỉ cần nói ngắn gọn bạn đề nghị xóa những ghi chú nào và mời người dùng xác nhận ở thẻ bên dưới.
+            - Nếu người dùng nhắc đến ghi chú bằng cú pháp @tên-ghi-chú thì nội dung đã đính kèm cuối tin nhắn, không cần đọc lại bằng tool.
+            - Người dùng có thể đính kèm ảnh (bạn nhìn thấy trực tiếp) và tài liệu (nội dung nằm giữa [Tệp đính kèm: …] và [Hết tệp …]). Hãy phân tích kỹ nội dung đó: tóm tắt, rút ý chính, số liệu, việc cần làm. Chỉ tạo ghi chú khi người dùng yêu cầu — ở cuối câu trả lời có thể gợi ý ngắn "muốn mình lưu thành ghi chú không?".
+            - Trả lời bằng tiếng Việt, ngắn gọn, hữu ích; dùng markdown khi trình bày có cấu trúc.
+            """
+        }
+        return """
+        You are the AI assistant inside NoteStudio, a note-taking app on macOS, with FULL authority to work with the user's notes through these tools: list_notes, search_notes, read_note, create_note, update_note, append_to_note, delete_note, get_active_note, get_stats, select_note.
+
+        How to work:
+        - General knowledge questions, explanations, translations: answer directly from your own knowledge, NO tool call needed.
+        - When the conversation concerns the user's notes (review, search, summarize, compare, stats, listing…): ALWAYS call a tool first (list_notes / search_notes / read_note / get_stats) to get real data. NEVER answer from thin air or ask the user to paste content — they cannot attach notes to chat (except the @note-title syntax, in which case the content is already attached at the end of the message).
+        - When brainstorming / researching: proactively read related notes to ground context, then propose new ideas; if the user wants to keep the result, call create_note.
+        - When the user asks to create / edit / append / pin / tag / delete: call the matching tool, then briefly confirm what you did.
+        - Long notes: read_note supports offset/limit (line-based) for reading in parts; update_note accepts offset/limit with content to replace/insert line ranges instead of overwriting the whole note.
+        - delete_note does NOT delete immediately: the app gathers all delete suggestions into ONE confirmation card right below your reply (the user can uncheck individual notes, and undo with ⌘Z). After calling it, just briefly say which notes you suggest deleting and invite the user to confirm in the card below.
+        - If the user refers to a note with the @note-title syntax, its content is already attached at the end of the message — no need to read it again with a tool.
+        - The user can attach images (you see them directly) and documents (content is between [Attachment: …] and [End of file …]). Analyze that content carefully: summary, key points, numbers, action items. Only create a note when asked — you may end with a short offer like "want me to save this as a note?".
+        - Reply in English, concise and helpful; use markdown when structure helps.
+        """
+    }
 
     // Định nghĩa function theo chuẩn OpenAI (được bọc {"type":"function","function":…} khi gửi)
     static let functionDefinitions: [[String: Any]] = [
         [
             "name": "list_notes",
-            "description": "Liệt kê tất cả ghi chú (id, tiêu đề, thẻ, thời gian sửa).",
+            "description": L("List all notes (id, title, tags, updated time)."),
             "parameters": ["type": "object", "properties": [:] as [String: Any]] as [String: Any]
         ],
         [
             "name": "search_notes",
-            "description": "Tìm ghi chú theo từ khóa trong tiêu đề và nội dung.",
+            "description": L("Search notes by keyword in title and content."),
             "parameters": [
                 "type": "object",
-                "properties": ["query": ["type": "string", "description": "Từ khóa tìm kiếm"]],
+                "properties": ["query": ["type": "string", "description": L("Search keyword")]],
                 "required": ["query"]
             ] as [String: Any]
         ],
         [
             "name": "read_note",
-            "description": "Đọc đầy đủ nội dung một ghi chú theo id.",
+            "description": L("Read a note's content by id. For long notes, read in parts with offset/limit (line-based)."),
             "parameters": [
                 "type": "object",
-                "properties": ["id": ["type": "string", "description": "UUID của ghi chú"]],
+                "properties": [
+                    "id": ["type": "string", "description": L("UUID of the note")],
+                    "offset": ["type": "integer", "description": L("Line to start reading from, 0-based (default 0)")],
+                    "limit": ["type": "integer", "description": L("Max lines to return (default: to the end)")]
+                ],
                 "required": ["id"]
             ] as [String: Any]
         ],
         [
             "name": "append_to_note",
-            "description": "Bổ sung nội dung vào CUỐI một ghi chú có sẵn (không ghi đè nội dung cũ).",
+            "description": L("Append content to the END of an existing note (does not overwrite)."),
             "parameters": [
                 "type": "object",
                 "properties": [
-                    "id": ["type": "string", "description": "UUID của ghi chú"],
-                    "text": ["type": "string", "description": "Nội dung cần bổ sung"]
+                    "id": ["type": "string", "description": L("UUID of the note")],
+                    "text": ["type": "string", "description": L("Content to append")]
                 ],
                 "required": ["id", "text"]
             ] as [String: Any]
         ],
         [
             "name": "get_active_note",
-            "description": "Lấy ghi chú đang được chọn trong app (nếu có).",
+            "description": L("Get the note currently selected in the app (if any)."),
             "parameters": ["type": "object", "properties": [:] as [String: Any]] as [String: Any]
         ],
         [
             "name": "get_stats",
-            "description": "Thống kê kho ghi chú: tổng số, số đã ghim, số lượng theo từng thẻ.",
+            "description": L("Note stats: total count, pinned count, count per tag."),
             "parameters": ["type": "object", "properties": [:] as [String: Any]] as [String: Any]
         ],
         [
             "name": "create_note",
-            "description": "Tạo ghi chú mới. Người dùng sẽ thấy ghi chú này hiện ngay trong app.",
+            "description": L("Create a new note. The user will see it appear in the app right away."),
             "parameters": [
                 "type": "object",
                 "properties": [
-                    "title": ["type": "string", "description": "Tiêu đề"],
-                    "content": ["type": "string", "description": "Nội dung"],
-                    "pinned": ["type": "boolean", "description": "Ghim lên đầu (mặc định false)"],
-                    "tags": ["type": "array", "items": ["type": "string"], "description": "Các thẻ"]
+                    "title": ["type": "string", "description": L("Title")],
+                    "content": ["type": "string", "description": L("Content")],
+                    "pinned": ["type": "boolean", "description": L("Pin to top (default false)")],
+                    "tags": ["type": "array", "items": ["type": "string"], "description": L("Tags")]
                 ],
                 "required": ["title"]
             ] as [String: Any]
         ],
         [
             "name": "update_note",
-            "description": "Cập nhật tiêu đề, nội dung, ghim hoặc thẻ của một ghi chú. Chỉ truyền các trường cần thay đổi.",
+            "description": L("Update a note's title, content, pinned state or tags. Only pass the fields to change. Pass offset (+ optional limit) with content to replace/insert a line range instead of overwriting the whole note."),
             "parameters": [
                 "type": "object",
                 "properties": [
-                    "id": ["type": "string", "description": "UUID của ghi chú"],
+                    "id": ["type": "string", "description": L("UUID of the note")],
                     "title": ["type": "string"],
                     "content": ["type": "string"],
                     "pinned": ["type": "boolean"],
-                    "tags": ["type": "array", "items": ["type": "string"]]
+                    "tags": ["type": "array", "items": ["type": "string"]],
+                    "offset": ["type": "integer", "description": L("Line to start replacing/inserting at, 0-based (only with content; with limit → replaces that many lines, without limit → inserts at that line)")],
+                    "limit": ["type": "integer", "description": L("Number of lines replaced (omit/0 = insert only, no lines removed)")]
                 ],
                 "required": ["id"]
             ] as [String: Any]
         ],
         [
             "name": "delete_note",
-            "description": "Xóa vĩnh viễn một ghi chú. Chỉ dùng khi người dùng yêu cầu rõ ràng.",
+            "description": L("Permanently delete a note. Only use when the user explicitly asks."),
             "parameters": [
                 "type": "object",
-                "properties": ["id": ["type": "string", "description": "UUID của ghi chú"]],
+                "properties": ["id": ["type": "string", "description": L("UUID of the note")]],
                 "required": ["id"]
             ] as [String: Any]
         ],
         [
             "name": "select_note",
-            "description": "Chọn và hiển thị một ghi chú trong app (chuyển sang màn ghi chú để người dùng xem).",
+            "description": L("Select and show a note in the app (switches to the notes screen)."),
             "parameters": [
                 "type": "object",
-                "properties": ["id": ["type": "string", "description": "UUID của ghi chú"]],
+                "properties": ["id": ["type": "string", "description": L("UUID of the note")]],
                 "required": ["id"]
             ] as [String: Any]
         ]
@@ -148,10 +174,24 @@ enum AgentTools {
 
         case "read_note":
             if let note = note(from: args, in: store) {
-                result = ["id": note.id.uuidString, "title": note.displayTitle,
-                          "content": note.content, "tags": note.displayTags, "pinned": note.pinned]
+                var payload: [String: Any] = ["id": note.id.uuidString, "title": note.displayTitle,
+                                              "content": note.content, "tags": note.displayTags,
+                                              "pinned": note.pinned,
+                                              "totalLines": NoteText.lines(note.content).count]
+                if args["offset"] != nil || args["limit"] != nil {
+                    let window = NoteText.slice(
+                        note.content,
+                        offset: (args["offset"] as? NSNumber)?.intValue ?? 0,
+                        limit: (args["limit"] as? NSNumber)?.intValue
+                    )
+                    payload["content"] = window.text
+                    payload["offset"] = window.offset
+                    payload["returnedLines"] = window.count
+                    payload["hasMore"] = window.hasMore
+                }
+                result = payload
             } else {
-                result = ["error": "Không tìm thấy ghi chú với id đã cho"]
+                result = ["error": L("No note found with the given id")]
             }
 
         case "append_to_note":
@@ -160,7 +200,7 @@ enum AgentTools {
                 store.appendContent(text, to: id)
                 result = ["appended": true, "id": id.uuidString]
             } else {
-                result = ["error": "Không tìm thấy ghi chú với id đã cho"]
+                result = ["error": L("No note found with the given id")]
             }
 
         case "get_active_note":
@@ -168,7 +208,7 @@ enum AgentTools {
                 result = ["id": note.id.uuidString, "title": note.displayTitle,
                           "content": note.content, "tags": note.displayTags]
             } else {
-                result = ["active": false, "hint": "Người dùng chưa chọn ghi chú nào trong app"]
+                result = ["active": false, "hint": L("The user has not selected any note in the app")]
             }
 
         case "get_stats":
@@ -191,17 +231,32 @@ enum AgentTools {
 
         case "update_note":
             if let id = uuid(from: args) {
-                let ok = store.updateAIFields(
-                    noteID: id,
-                    title: args["title"] as? String,
-                    content: args["content"] as? String,
-                    pinned: args["pinned"] as? Bool,
-                    tags: args["tags"] as? [String]
-                )
-                result = ok ? ["updated": true, "id": id.uuidString]
-                            : ["error": "Không tìm thấy ghi chú với id đã cho"]
+                if (args["offset"] as? NSNumber) != nil && args["content"] == nil {
+                    result = ["error": L("offset/limit must be passed together with content (the replacement or inserted text)")]
+                } else {
+                    var content = args["content"] as? String
+                    if let offset = (args["offset"] as? NSNumber)?.intValue,
+                       let current = store.note(id)?.content {
+                        // Thay `limit` dòng từ offset (limit bỏ qua/0 = chèn tại vị trí đó)
+                        content = NoteText.splice(
+                            current,
+                            offset: offset,
+                            limit: (args["limit"] as? NSNumber)?.intValue,
+                            replacement: content ?? ""
+                        )
+                    }
+                    let ok = store.updateAIFields(
+                        noteID: id,
+                        title: args["title"] as? String,
+                        content: content,
+                        pinned: args["pinned"] as? Bool,
+                        tags: args["tags"] as? [String]
+                    )
+                    result = ok ? ["updated": true, "id": id.uuidString]
+                                : ["error": "Không tìm thấy ghi chú với id đã cho"]
+                }
             } else {
-                result = ["error": "Thiếu hoặc sai id"]
+                result = ["error": L("Missing or invalid id")]
             }
 
         case "delete_note":
@@ -211,10 +266,10 @@ enum AgentTools {
                     "status": "awaiting_user_confirmation",
                     "id": id.uuidString,
                     "title": note.displayTitle,
-                    "hint": "Chưa xóa. UI hiển thị thẻ xác nhận gộp bên dưới câu trả lời — mời người dùng xác nhận ở đó."
+                    "hint": L("Not deleted. The UI shows a combined confirmation card below the reply — ask the user to confirm there.")
                 ]
             } else {
-                result = ["error": "Không tìm thấy ghi chú với id đã cho"]
+                result = ["error": L("No note found with the given id")]
             }
 
         case "select_note":
@@ -223,11 +278,11 @@ enum AgentTools {
                 store.select(id)
                 result = ["shown": true, "id": id.uuidString]
             } else {
-                result = ["error": "Không tìm thấy ghi chú với id đã cho"]
+                result = ["error": L("No note found with the given id")]
             }
 
         default:
-            result = ["error": "Tool không tồn tại: \(name)"]
+            result = ["error": Lf("Unknown tool: %@", name)]
         }
 
         guard let data = try? JSONSerialization.data(withJSONObject: result, options: [.sortedKeys]),
@@ -240,17 +295,17 @@ enum AgentTools {
     static func uiSummary(for name: String, argumentsJSON: String) -> String {
         let args = (try? JSONSerialization.jsonObject(with: Data(argumentsJSON.utf8))) as? [String: Any] ?? [:]
         switch name {
-        case "list_notes": return "Liệt kê ghi chú"
-        case "search_notes": return "Tìm kiếm \"\(args["query"] as? String ?? "")\""
-        case "read_note": return "Đọc ghi chú"
-        case "create_note": return "Tạo ghi chú \"\(args["title"] as? String ?? "")\""
-        case "update_note": return "Cập nhật ghi chú"
-        case "append_to_note": return "Bổ sung vào ghi chú"
-        case "get_active_note": return "Xem ghi chú đang chọn"
-        case "get_stats": return "Thống kê kho ghi chú"
-        case "delete_note": return "Đề nghị xóa ghi chú"
-        case "select_note": return "Mở ghi chú trong app"
-        default: return "Gọi \(name)"
+        case "list_notes": return L("List notes")
+        case "search_notes": return Lf("Search “%@”", args["query"] as? String ?? "")
+        case "read_note": return L("Read note")
+        case "create_note": return Lf("Create note “%@”", args["title"] as? String ?? "")
+        case "update_note": return L("Update note")
+        case "append_to_note": return L("Append to note")
+        case "get_active_note": return L("View active note")
+        case "get_stats": return L("Note stats")
+        case "delete_note": return L("Suggest deleting a note")
+        case "select_note": return L("Open note in app")
+        default: return Lf("Call %@", name)
         }
     }
 

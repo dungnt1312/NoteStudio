@@ -7,6 +7,7 @@ import Security
 // bị macOS hỏi password keychain mỗi lần rebuild.
 
 enum LLMService {
+    static var isVietnamese: Bool { LocalizationManager.resolvedLanguage == .vietnamese }
     static let defaultBaseURL = "https://api.openai.com/v1"
     static let defaultModel = "gpt-4o-mini"
 
@@ -176,13 +177,13 @@ enum LLMService {
             do {
                 let (data, response) = try await URLSession.shared.data(for: request)
                 guard let http = response as? HTTPURLResponse else {
-                    throw LLMError.requestFailed("Không nhận được phản hồi từ provider")
+                    throw LLMError.requestFailed(L("No response received from the provider"))
                 }
                 guard http.statusCode == 200 else {
                     let apiMessage = ((try? JSONSerialization.jsonObject(with: data)) as? [String: Any])
                         .flatMap { $0["error"] as? [String: Any] }?["message"] as? String
                         ?? String(data: data, encoding: .utf8)
-                        ?? "Lỗi không xác định"
+                        ?? L("Unknown error")
                     let error = LLMError.http(http.statusCode, apiMessage)
                     if [429, 500, 502, 503, 504].contains(http.statusCode), attempt < 3 {
                         try? await Task.sleep(nanoseconds: UInt64(attempt) * 2_000_000_000)
@@ -194,7 +195,7 @@ enum LLMService {
                 guard let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
                       let choices = json["choices"] as? [[String: Any]],
                       let message = choices.first?["message"] as? [String: Any] else {
-                    throw LLMError.requestFailed("Không đọc được nội dung phản hồi")
+                    throw LLMError.requestFailed(L("Couldn't decode the response body"))
                 }
 
                 let content = (message["content"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -269,7 +270,7 @@ enum LLMService {
 
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
         guard let http = response as? HTTPURLResponse else {
-            throw LLMError.requestFailed("Không nhận được phản hồi từ provider")
+            throw LLMError.requestFailed(L("No response received from the provider"))
         }
         guard http.statusCode == 200 else {
             var body = ""
@@ -277,7 +278,7 @@ enum LLMService {
                 body += line
                 if body.count > 400 { break }
             }
-            throw LLMError.http(http.statusCode, body.isEmpty ? "Lỗi không xác định" : body)
+            throw LLMError.http(http.statusCode, body.isEmpty ? L("Unknown error") : body)
         }
 
         var content = ""
@@ -328,7 +329,9 @@ enum LLMService {
     static func suggestTitle(content: String) async throws -> String {
         let raw = try await chat(messages: [
             ["role": "system",
-             "content": "Bạn đặt tiêu đề cho ghi chú. Chỉ trả về duy nhất tiêu đề, tối đa 8 từ, không dấu ngoặc kép, bằng tiếng Việt."],
+             "content": LLMService.isVietnamese
+                ? "Bạn đặt tiêu đề cho ghi chú. Chỉ trả về duy nhất tiêu đề, tối đa 8 từ, không dấu ngoặc kép, bằng tiếng Việt."
+                : "You name notes. Reply with only the title, at most 8 words, no quotes, in English."],
             ["role": "user", "content": String(content.prefix(1200))]
         ], temperature: 0.4)
         return raw
@@ -339,7 +342,9 @@ enum LLMService {
     static func suggestTags(content: String) async throws -> [String] {
         let raw = try await chat(messages: [
             ["role": "system",
-             "content": "Bạn gắn thẻ cho ghi chú. Chỉ trả về 3-5 thẻ, mỗi thẻ 1-2 từ, chữ thường, phân tách bởi dấu phẩy, không giải thích gì thêm."],
+             "content": LLMService.isVietnamese
+                ? "Bạn gắn thẻ cho ghi chú. Chỉ trả về 3-5 thẻ, mỗi thẻ 1-2 từ, chữ thường, phân tách bởi dấu phẩy, không giải thích gì thêm."
+                : "You tag notes. Reply with 3-5 tags, each 1-2 words, lowercase, comma-separated, no explanation."],
             ["role": "user", "content": String(content.prefix(1200))]
         ], temperature: 0.3)
         return raw
@@ -360,9 +365,9 @@ enum LLMError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidBaseURL(let url):
-            return "Base URL không hợp lệ: \(url)"
+            return Lf("Invalid Base URL: %@", url)
         case .http(let code, let message):
-            return "Lỗi LLM provider (\(code)): \(message)"
+            return Lf("LLM provider error (%d): %@", code, message)
         case .requestFailed(let message):
             return message
         }

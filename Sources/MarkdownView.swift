@@ -15,7 +15,7 @@ struct MarkdownPreviewView: View {
                     }
                 }
                 if blocks.isEmpty {
-                    Text("Ghi chú trống")
+                    Text(L("Empty note"))
                         .font(.system(size: 13))
                         .foregroundStyle(Studio.textTertiary)
                 }

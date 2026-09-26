@@ -47,7 +47,8 @@ Phím tắt: ⌘N ghi chú mới · ⌘⇧O hội thoại mới · ⌘1/⌘2 Ghi
 
 - Tạo / xóa / ghim ghi chú (menu chuột phải hoặc thanh công cụ editor)
 - Tìm kiếm tức thời theo tiêu đề & nội dung
-- Tự động lưu (debounce ~0.6 giây) vào `~/Library/Application Support/NoteStudio/notes.json`
+- Tự động lưu (debounce ~0.6 giây) — **mỗi ghi chú là một file `.md`** tại `~/Library/Application Support/NoteStudio/notes/<id>.md`
+  (frontmatter giữ id/ngày/pinned/tags; bản cũ `notes.json` tự chuyển đổi khi mở app và được giữ lại thành `notes.json.imported`)
 - Phím tắt ⌘N — tạo ghi chú mới
 - Lần chạy đầu tự tạo 4 ghi chú demo
 
@@ -79,7 +80,7 @@ Phím tắt: ⌘N ghi chú mới · ⌘⇧O hội thoại mới · ⌘1/⌘2 Ghi
 - **Command palette ⌘K** — gõ để nhảy tới note / tạo note / bật dark mode / xuất PDF…
 - **Checklist tương tác** — `- [ ]` trong markdown preview thành checkbox bấm được thật (tick lưu ngược vào note)
 - **Menu bar quick capture** — icon giấy bút trên menu bar, ghi nhanh không cần mở app
-- **iCloud Drive sync** — mirror notes.json sang iCloud Drive mỗi lần lưu, merge mới-hơn-thắng khi mở app
+- **iCloud Drive sync** — mirror từng file `.md` sang iCloud Drive mỗi lần lưu, merge mới-hơn-thắng khi mở app
 - **MCP tool `open_note`** — AI mở app và nhảy tới đúng ghi chú qua URL scheme `notestudio://note/<id>`
 
 ### Nâng cấp v1.2 — MCP server 🤖
@@ -87,7 +88,8 @@ Phím tắt: ⌘N ghi chú mới · ⌘⇧O hội thoại mới · ⌘1/⌘2 Ghi
 - **`notestudio-mcp`** — MCP server viết bằng Swift (stdio, JSON-RPC 2.0, không cần Node)
 - Cho AI client (ZCode, Claude Desktop…) thao tác trực tiếp với ghi chú qua 6 tools:
   `list_notes`, `search_notes`, `read_note`, `create_note`, `update_note`, `delete_note`
-- App đang mở **tự nhận thay đổi** từ AI ngay lập tức nhờ file-watcher (theo dõi `notes.json`, hai chiều)
+- App đang mở **tự nhận thay đổi** từ AI ngay lập tức nhờ file-watcher (theo dõi thư mục `notes/`, hai chiều).
+  `read_note` / `update_note` hỗ trợ `offset`/`limit` (theo dòng) — đọc ghi chú dài từng phần, thay/chèn từng đoạn thay vì ghi đè cả ghi chú
 - Đăng ký trong `~/.zcode/cli/config.json`:
 
 ```json
@@ -119,7 +121,8 @@ NoteStudio/
 ├── Sources/
 │   ├── NoteStudioApp.swift   # entry point, cửa sổ, phím tắt
 │   ├── Note.swift            # model
-│   ├── NotesStore.swift      # state + lưu JSON + file-watcher + mirror iCloud
+│   ├── NoteFile.swift        # lưu trữ notes/<id>.md (frontmatter) — dùng chung app + MCP server
+│   ├── NotesStore.swift      # state + lưu file .md + file-watcher + mirror iCloud
 │   ├── ContentView.swift     # khung cửa sổ: sidebar + nội dung (+ trợ lý bên phải), toast
 │   ├── SidebarView.swift     # sidebar: Ghi chú/Trợ lý, danh sách theo thời gian, Cài đặt
 │   ├── EditorView.swift      # soạn thảo + preview + thẻ dưới tiêu đề + quick AI

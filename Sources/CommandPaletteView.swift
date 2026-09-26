@@ -30,27 +30,27 @@ struct CommandPaletteView: View {
         func matches(_ text: String) -> Bool { q.isEmpty || text.lowercased().contains(q) }
 
         let commands: [Item] = [
-            Item(id: "new-note", icon: "square.and.pencil", title: "Ghi chú mới", shortcut: "⌘N") { store.createNote() },
-            Item(id: "new-chat", icon: "bubble.left.and.bubble.right", title: "Hội thoại mới", shortcut: "⌘⇧O") {
+            Item(id: "new-note", icon: "square.and.pencil", title: L("New note"), shortcut: "⌘N") { store.createNote() },
+            Item(id: "new-chat", icon: "bubble.left.and.bubble.right", title: L("New chat"), shortcut: "⌘⇧O") {
                 store.newChatSession()
                 store.activeSection = .chat
             },
-            Item(id: "notes", icon: "doc.text", title: "Đi tới Ghi chú", shortcut: "⌘1") { store.activeSection = .notes },
-            Item(id: "chat", icon: "sparkles", title: "Đi tới Trợ lý AI", shortcut: "⌘2") { store.activeSection = .chat },
+            Item(id: "notes", icon: "doc.text", title: L("Go to Notes"), shortcut: "⌘1") { store.activeSection = .notes },
+            Item(id: "chat", icon: "sparkles", title: L("Go to AI Assistant"), shortcut: "⌘2") { store.activeSection = .chat },
             Item(id: "assistant-panel", icon: "sidebar.right",
-                 title: store.showAssistant ? "Ẩn trợ lý bên cạnh ghi chú" : "Mở trợ lý bên cạnh ghi chú", shortcut: "⌘⇧J") {
+                 title: store.showAssistant ? L("Hide Assistant Panel") : L("Open Assistant Panel"), shortcut: "⌘⇧J") {
                 store.activeSection = .notes
                 withAnimation(.easeInOut(duration: 0.22)) { store.showAssistant.toggle() }
             },
-            Item(id: "sidebar", icon: "sidebar.left", title: store.sidebarVisible ? "Ẩn thanh bên" : "Hiện thanh bên", shortcut: "⌃⌘S") {
+            Item(id: "sidebar", icon: "sidebar.left", title: store.sidebarVisible ? L("Hide Sidebar") : L("Show Sidebar"), shortcut: "⌃⌘S") {
                 withAnimation(.easeInOut(duration: 0.2)) { store.sidebarVisible.toggle() }
             },
-            Item(id: "export", icon: "arrow.down.doc", title: "Xuất ghi chú hiện tại ra PDF") {
+            Item(id: "export", icon: "arrow.down.doc", title: L("Export current note as PDF")) {
                 if let note = store.selectedNote { ExportService.exportPDF(note: note) }
             },
-            Item(id: "settings", icon: "gearshape", title: "Cài đặt", shortcut: "⌘,") { store.activeSection = .settings },
+            Item(id: "settings", icon: "gearshape", title: L("Settings"), shortcut: "⌘,") { store.activeSection = .settings },
         ] + AppearanceMode.allCases.map { mode in
-            Item(id: "appearance-\(mode.rawValue)", icon: mode.icon, title: "Giao diện: \(mode.label)") {
+            Item(id: "appearance-\(mode.rawValue)", icon: mode.icon, title: Lf("Appearance: %@", mode.label)) {
                 AppearanceMode.current = mode
             }
         }
@@ -82,9 +82,9 @@ struct CommandPaletteView: View {
             }
 
         return [
-            Group(id: "commands", title: "Lệnh", items: commands.filter { matches($0.title) }),
-            Group(id: "notes", title: q.isEmpty ? "Ghi chú gần đây" : "Ghi chú", items: Array(noteItems)),
-            Group(id: "chats", title: "Hội thoại", items: Array(chatItems)),
+            Group(id: "commands", title: L("Commands"), items: commands.filter { matches($0.title) }),
+            Group(id: "notes", title: q.isEmpty ? L("Recent notes") : L("Notes"), items: Array(noteItems)),
+            Group(id: "chats", title: L("Chats"), items: Array(chatItems)),
         ].filter { !$0.items.isEmpty }
     }
 
@@ -101,7 +101,7 @@ struct CommandPaletteView: View {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 15))
                         .foregroundStyle(Studio.textTertiary)
-                    TextField("Tìm lệnh, ghi chú, hội thoại…", text: $query)
+                    TextField(L("Search commands, notes, chats…"), text: $query)
                         .textFieldStyle(.plain)
                         .font(Studio.Typo.body())
                         .foregroundStyle(Studio.textPrimary)
@@ -132,7 +132,7 @@ struct CommandPaletteView: View {
                                 }
                             }
                             if flat.isEmpty {
-                                Text("Không có kết quả cho “\(query)”")
+                                Text(Lf("No results for “%@”", query))
                                     .font(Studio.Typo.callout())
                                     .foregroundStyle(Studio.textSecondary)
                                     .frame(maxWidth: .infinity)
@@ -151,8 +151,8 @@ struct CommandPaletteView: View {
 
                 Rectangle().fill(Studio.hairline).frame(height: 1)
                 HStack(spacing: 14) {
-                    hint("↑↓", "di chuyển")
-                    hint("↵", "chọn")
+                    hint("↑↓", L("navigate"))
+                    hint("↵", L("select"))
                     Spacer()
                 }
                 .padding(.horizontal, 14)

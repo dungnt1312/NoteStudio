@@ -753,10 +753,10 @@ final class EditorTextView: NSTextView {
             bottom = origin.y + fragment.maxY
         }
         _ = container
-        ("Tiêu đề" as NSString).draw(at: NSPoint(x: x, y: top), withAttributes: [
+        (L("Title") as NSString).draw(at: NSPoint(x: x, y: top), withAttributes: [
             .font: titleFont, .foregroundColor: NSColor.placeholderTextColor
         ])
-        let hint = "Enter để bắt đầu viết · Gõ / để chèn tiêu đề, danh sách, việc cần làm, khối mã…"
+        let hint = L("Type to start writing · Type / to insert headings, lists, to-dos, code blocks…")
         (hint as NSString).draw(at: NSPoint(x: origin.x, y: bottom + 14), withAttributes: [
             .font: MarkdownTheme.body, .foregroundColor: NSColor.placeholderTextColor
         ])
@@ -1323,31 +1323,34 @@ struct SlashItem: Identifiable {
         s.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
     }
 
-    static let all: [SlashItem] = [
-        SlashItem(title: "Tiêu đề 1", hint: "#", icon: "textformat.size.larger",
-                  keywords: ["h1", "heading", "tieu de", "de muc"], insert: { "# \u{1}" }),
-        SlashItem(title: "Tiêu đề 2", hint: "##", icon: "textformat.size",
-                  keywords: ["h2", "heading", "tieu de"], insert: { "## \u{1}" }),
-        SlashItem(title: "Tiêu đề 3", hint: "###", icon: "textformat.size.smaller",
-                  keywords: ["h3", "heading", "tieu de"], insert: { "### \u{1}" }),
-        SlashItem(title: "Danh sách", hint: "-", icon: "list.bullet",
-                  keywords: ["danh sach", "list", "bullet", "gach dau dong"], insert: { "- \u{1}" }),
-        SlashItem(title: "Danh sách số", hint: "1.", icon: "list.number",
-                  keywords: ["danh sach so", "numbered", "so thu tu"], insert: { "1. \u{1}" }),
-        SlashItem(title: "Việc cần làm", hint: "- [ ]", icon: "checklist",
-                  keywords: ["viec", "todo", "checklist", "nhiem vu", "can lam"], insert: { "- [ ] \u{1}" }),
-        SlashItem(title: "Trích dẫn", hint: ">", icon: "text.quote",
-                  keywords: ["trich dan", "quote", "trich"], insert: { "> \u{1}" }),
-        SlashItem(title: "Đường kẻ", hint: "---", icon: "minus",
-                  keywords: ["duong ke", "ke ngang", "divider", "hr", "ngan cach"], insert: { "---\n\u{1}" }),
-        SlashItem(title: "Khối mã", hint: "```", icon: "chevron.left.forwardslash.chevron.right",
-                  keywords: ["ma", "code", "khoi ma"], insert: { "```\n\u{1}\n```" }),
-        SlashItem(title: "Ngày hôm nay", hint: "", icon: "calendar",
-                  keywords: ["ngay", "date", "hom nay", "today"], insert: { Date().studioDate }),
-        SlashItem(title: "Giờ hiện tại", hint: "", icon: "clock",
-                  keywords: ["gio", "time", "thoi gian"],
-                  insert: { Date().formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(Studio.locale)) })
-    ]
+    // computed var: tra lại bản dịch mỗi lần mở menu
+    static var all: [SlashItem] {
+        [
+            SlashItem(title: L("Heading 1"), hint: "#", icon: "textformat.size.larger",
+                      keywords: ["h1", "heading", "tieu de", "de muc"], insert: { "# \u{1}" }),
+            SlashItem(title: L("Heading 2"), hint: "##", icon: "textformat.size",
+                      keywords: ["h2", "heading", "tieu de"], insert: { "## \u{1}" }),
+            SlashItem(title: L("Heading 3"), hint: "###", icon: "textformat.size.smaller",
+                      keywords: ["h3", "heading", "tieu de"], insert: { "### \u{1}" }),
+            SlashItem(title: L("Bulleted list"), hint: "-", icon: "list.bullet",
+                      keywords: ["danh sach", "list", "bullet", "gach dau dong"], insert: { "- \u{1}" }),
+            SlashItem(title: L("Numbered list"), hint: "1.", icon: "list.number",
+                      keywords: ["danh sach so", "numbered", "so thu tu"], insert: { "1. \u{1}" }),
+            SlashItem(title: L("To-do"), hint: "- [ ]", icon: "checklist",
+                      keywords: ["viec", "todo", "checklist", "nhiem vu", "can lam"], insert: { "- [ ] \u{1}" }),
+            SlashItem(title: L("Quote"), hint: ">", icon: "text.quote",
+                      keywords: ["trich dan", "quote", "trich"], insert: { "> \u{1}" }),
+            SlashItem(title: L("Divider"), hint: "---", icon: "minus",
+                      keywords: ["duong ke", "ke ngang", "divider", "hr", "ngan cach"], insert: { "---\n\u{1}" }),
+            SlashItem(title: L("Code block"), hint: "```", icon: "chevron.left.forwardslash.chevron.right",
+                      keywords: ["ma", "code", "khoi ma"], insert: { "```\n\u{1}\n```" }),
+            SlashItem(title: L("Today's date"), hint: "", icon: "calendar",
+                      keywords: ["ngay", "date", "hom nay", "today"], insert: { Date().studioDate }),
+            SlashItem(title: L("Current time"), hint: "", icon: "clock",
+                      keywords: ["gio", "time", "thoi gian"],
+                      insert: { Date().formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(Studio.locale)) })
+        ]
+    }
 
     /// Lọc không phân biệt hoa thường/dấu — "tieu de" vẫn ra "Tiêu đề"
     static func filter(_ query: String, limit: Int = 7) -> [SlashItem] {
